@@ -1,0 +1,2 @@
+#define APP_TASK_START_STK_SIZE 256u
+#define APP_TASK_START_PRIO     1u

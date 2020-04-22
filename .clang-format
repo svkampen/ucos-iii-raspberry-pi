@@ -1,0 +1,20 @@
+---
+AlignConsecutiveAssignments: 'true'
+AlignConsecutiveDeclarations: 'true'
+BreakBeforeBraces: Allman
+ColumnLimit: '100'
+DerivePointerAlignment: 'false'
+IndentWidth: '4'
+KeepEmptyLinesAtTheStartOfBlocks: 'false'
+NamespaceIndentation: All
+PointerAlignment: Left
+SortIncludes: 'true'
+SpaceAfterCStyleCast: 'false'
+SpacesBeforeTrailingComments: '1'
+TabWidth: '4'
+UseTab: Never
+Cpp11BracedListStyle: false
+AllowShortIfStatementsOnASingleLine: 'true'
+IndentCaseLabels: 'true'
+...
+
