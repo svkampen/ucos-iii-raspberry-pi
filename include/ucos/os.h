@@ -525,6 +525,7 @@ typedef  enum  os_err {
     OS_ERR_REG_ID_INVALID            = 27001u,
     OS_ERR_ROUND_ROBIN_1             = 27002u,
     OS_ERR_ROUND_ROBIN_DISABLED      = 27003u,
+    OS_ERR_RDY_QUEUE_FULL            = 27004u,
 
     OS_ERR_S                         = 28000u,
     OS_ERR_SCHED_INVALID_TIME_SLICE  = 28001u,

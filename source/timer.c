@@ -1,5 +1,4 @@
 #include "timer.h"
-#include "io.h"
 #include "interrupts.h"
 #include "uart.h"
 #include <os.h>

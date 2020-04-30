@@ -10,10 +10,10 @@
 .global _start
 
 
-/* The ARM interrupt vector table is not a list of addresses to branch to,
+/* The ARM exception vectors do not consist of addresses of exception handlers,
  * but rather the actual branch instructions. Seeing as our kernel is started
  * at 0x8000 by the boot code, we need to copy these over, which we will do
- * shortly, in the reset handler. Conveniently, that's the first entry in the IVT,
+ * shortly, in the reset handler. Conveniently, that's the first EV,
  * so we'll branch to it immediately.
  */
 
@@ -42,7 +42,7 @@ reset:
     mov r0,#0x8000
     mov r1,#0
 
-    /* Move 8*4*2 = 64 bytes from 0x8000 (_start) to the IVT */
+    /* Move 8*4*2 = 64 bytes from 0x8000 (_start) to the exception vectors */
     ldmia r0!,{r2,r3,r4,r5,r6,r7,r8,r9}
     stmia r1!,{r2,r3,r4,r5,r6,r7,r8,r9}
     ldmia r0!,{r2,r3,r4,r5,r6,r7,r8,r9}
