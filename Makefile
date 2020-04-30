@@ -11,8 +11,8 @@ COBJECTS += $(patsubst source/app/%.c,build/app/%.o,$(wildcard source/app/*.c))
 COBJECTS += $(patsubst source/uclib/%.c,build/uclib/%.o,$(wildcard source/uclib/*.c))
 COBJECTS += $(patsubst source/bsp/%.c,build/bsp/%.o,$(wildcard source/bsp/*.c))
 INCLUDEFLAGS=-I include -I include/ucos -I include/uclib -I include/app -I include/bsp
-CPUFLAGS=-march=armv6zk -mcpu=arm1176jzf-s -mfloat-abi=hard -mfpu=vfpv2 
-CFLAGS=-ffreestanding -O0 $(CPUFLAGS) -static -nostartfiles -nostdlib -marm
+CPUFLAGS=-mcpu=arm1176jzf-s
+CFLAGS=-ffreestanding -O2 $(CPUFLAGS) -static -nostartfiles -nostdlib -marm
 ASFLAGS=$(CPUFLAGS)
 
 .PHONY: clean

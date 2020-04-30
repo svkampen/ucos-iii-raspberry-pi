@@ -68,6 +68,26 @@ reset:
 
     bl int_disable_irqs
 
+    // set up FPU access
+    // The FPU is a coprocessor, using coprocessor numbers 10 and 11.
+    // 10 is used for single-precision floating-point arithmetic,
+    // 11 is used for double-precision floating-point arithmetic.
+    // We need to allow access to them through the system control
+    // coprocessor - CP15.
+    // mrc p15, 0, r0, c1, c0, 2
+    // orr r0, r0, #0x300000 // allow access to CP10 in privileged and user mode
+    // orr r0, r0, #0xC00000 // allow access to CP11 in privileged and user mode
+    // mcr p15, 0, r0, c1, c0, 2
+    // According to the ARM1176-JZF-S technical reference manual, we need to
+    // flush the prefetch buffer here (after any writes to the coprocessor
+    // access register). Unsurprisingly that's a coprocessor write, too.
+    // bl __fpb
+
+    // Set the FPU enable bit in the floating point exception register.
+    // mov r0,#0x40000000
+    // fmxr fpexc,r0
+
+
 // Zero out C BSS
 
     ldr r0, =__bss_start
@@ -154,4 +174,11 @@ irq_nested$:
 __dmb:
     mov r0,#0
     mcr p15, 0, r0, c7, c10, 5
+    bx lr
+
+/* Flush Prefetch Buffer. Used after CP15 access register writes, for instance. */
+.global __fpb
+__fpb:
+    mov r0,#0
+    mcr p15, 0, r0, c7, c5, 4
     bx lr
