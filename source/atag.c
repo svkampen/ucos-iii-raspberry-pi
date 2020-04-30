@@ -1,9 +1,6 @@
 #include "atag.h"
-#include "io.h"
+#include "printf.h"
 #include "uart.h"
-
-/* ATAG code included from https://github.com/mrvn/RaspberryPi-baremetal/blob/master/004-a-t-a-and-g-walk-into-a-baremetal/arch_info.c
- * Licensed under the GPL, as are the rest of my modifications. */
 
 #include <stddef.h>
 
@@ -18,17 +15,17 @@
 #define ATAG_VIDEOLFB   0x54410008
 #define ATAG_CMDLINE    0x54410009
 
-const struct ATag* next(const struct ATag* tag)
+const struct atag* next(const struct atag* tag)
 {
     if (tag->tag == ATAG_NONE)
     {
         return NULL;
     }
 
-    return (const struct ATag*)(((uint32_t*)tag) + tag->tag_size);
+    return (const struct atag*)(((uint32_t*)tag) + tag->tag_size);
 }
 
-u32 arch_info_init(const struct ATag* tag)
+u32 arch_info_init(const struct atag* tag)
 {
     u32 memory_size = 0;
     do
@@ -36,25 +33,21 @@ u32 arch_info_init(const struct ATag* tag)
         switch (tag->tag)
         {
             case ATAG_MEM:
-                uart_send("Found memory tag: size ");
-                printi(tag->mem_size);
-                uart_send(", start ");
-                printi(tag->mem_start);
+                printf("Found memory tag: size %d, start %d\n",
+                       tag->mem_size,
+                       tag->mem_start);
                 memory_size += tag->mem_size - tag->mem_start;
                 break;
             case ATAG_CMDLINE:
-                uart_send("Found command line: ");
-                uart_send(tag->cmdline);
-                uart_send("\n");
+                printf("Found command line: %s\n", tag->cmdline);
                 break;
             case ATAG_CORE:
                 uart_send("Found core tag.\n"); break;
             case ATAG_INITRD2:
                 uart_send("Found initrd tag.\n"); break;
             default:
-                uart_send("Found other tag: ");
-                printi(tag->tag);
-                uart_send("\n");
+                printf("Found other tag: %x\n", tag->tag);
+                break;
         }
     } while ((tag = next(tag)));
 

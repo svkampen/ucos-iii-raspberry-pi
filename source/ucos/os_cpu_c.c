@@ -47,7 +47,7 @@ const  CPU_CHAR  *os_cpu_c__c = "$Id: $";
 
 #include  <os.h>
 #include <uart.h>
-#include <io.h>
+#include <printf.h>
 
 /*
 *********************************************************************************************************
@@ -326,8 +326,9 @@ CPU_STK  *OSTaskStkInit (OS_TASK_PTR    p_task,
 void  OSTaskSwHook (void)
 {
 #ifdef DBUGTASKSW
-    uart_send("Stored on stack/restoring to registers:\n");
+    printf("Stored on stack/restoring to registers:\n");
     uint32_t* suspended_stack = OSTCBCurPtr->StkPtr;
+#define printh(hexnum) printf("%x\n", hexnum)
     printh(*suspended_stack++); // stack alignment delta
     printh(*suspended_stack++); // r0
     printh(*suspended_stack++); // r1

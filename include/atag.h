@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 
-struct ATag {
+struct atag {
     uint32_t tag_size;
     uint32_t tag;
     union
@@ -20,4 +20,4 @@ struct ATag {
     };
 };
 
-u32 arch_info_init(const struct ATag* tag);
+u32 arch_info_init(const struct atag* tag);

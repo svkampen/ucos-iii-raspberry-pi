@@ -36,17 +36,16 @@ void main(void)
     __dmb();
 
     uart_init();
-    uart_send("Initialized UART. You should be able to see this.\n");
+    printf("\nInitialized UART. You should be able to see this.\n");
 
     OSInit(&err);
 
     if (err != OS_ERR_NONE)
     {
-        uart_send("Uh oh, OSInit returned: ");
-        printi(err);
+        ERR("OSInit", err);
     }
     else
-        uart_send("OSInit complete.\n");
+        printf("OSInit complete\n");
 
     OSTaskCreate((OS_TCB*)       &AppTaskStartTCB,
                  (CPU_CHAR*)     "App Task Start",
@@ -64,11 +63,10 @@ void main(void)
 
     if (err != OS_ERR_NONE)
     {
-        uart_send("Uh oh, OSTaskCreate returned: ");
-        printi(err);
+        ERR("OSTaskCreate", err);
     }
     else
-        uart_send("OSTaskCreate complete.\n");
+        printf("OSTaskCreate complete.\n");
 
     OSStart(&err);
 }

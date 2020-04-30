@@ -75,6 +75,14 @@ void uart_sendbyte(char byte)
     *uart = byte;
 }
 
+/* Required in printf.c */
+void _putchar(char byte)
+{
+    if (byte == '\n')
+        uart_sendbyte(0x0D);
+    uart_sendbyte(byte);
+}
+
 void uart_send(const char* text)
 {
     char c;

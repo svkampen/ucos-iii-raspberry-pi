@@ -1,6 +1,6 @@
 #include "interrupts.h"
+#include "printf.h"
 #include "uart.h"
-#include "io.h"
 
 interrupt_handler_t irq_handlers[BCM2835_IRQ_MAX];
 
@@ -23,16 +23,14 @@ void int_handle_irq()
     u32 first_set;
 
 #ifdef DEBUGINTR
-    uart_send("Pending: ");
-    printi(pending_status);
+    printf("Pending: %d\n", pending_status);
 #endif
 
     /* If there's a non-GPU interrupt: */
     if (pending_status & ~0xFFFFF300)
     {
 #ifdef DEBUGINTR
-        uart_send("Non-GPU interrupt: ");
-        printi(pending_status);
+        printf("Non-GPU interrupt: %d\n", pending_status);
 #endif
         irqBaseNum = 64;
         goto emit_interrupt;
@@ -43,8 +41,7 @@ void int_handle_irq()
         // One of the first 32 GPU interrupts is pending
         pending_status = *irq_pend_1;
 #ifdef DEBUGINTR
-        uart_send("GPU 1 interrupt: ");
-        printi(pending_status);
+        printf("GPU 1 interrupt: %d\n", pending_status);
 #endif
         irqBaseNum     = 0;
         if (pending_status) // always the case? copied from Real-Pi
@@ -56,8 +53,7 @@ void int_handle_irq()
         // One of the last 32 GPU interrupts is pending
         pending_status = *irq_pend_2;
 #ifdef DEBUGINTR
-        uart_send("GPU 2 interrupt: ");
-        printi(pending_status);
+        printf("GPU 2 interrupt: %d\n", pending_status);
 #endif
         irqBaseNum     = 32;
         if (pending_status) goto emit_interrupt;

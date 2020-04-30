@@ -18,4 +18,5 @@ void uart_init();
 char uart_getbyte();
 void uart_getline(char* buf);
 void uart_sendbyte(char byte);
+void _putchar(char byte);
 void uart_send(const char* text);
