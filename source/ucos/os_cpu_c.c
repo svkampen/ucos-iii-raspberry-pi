@@ -81,6 +81,8 @@ const  CPU_CHAR  *os_cpu_c__c = "$Id: $";
 *********************************************************************************************************
 */
 
+extern void CPU_WaitForInterrupt();
+
 void  OSIdleTaskHook (void)
 {
 #if OS_CFG_APP_HOOKS_EN > 0u
@@ -261,6 +263,7 @@ CPU_STK  *OSTaskStkInit (OS_TASK_PTR    p_task,
     CPU_STK  *p_stk;
 
     (void)opt;                                              /* Prevent compiler warning                               */
+    (void)p_stk_limit;
 
     p_stk     = &p_stk_base[stk_size];                      /* Load stack pointer                                */
     *--p_stk  = (CPU_STK)ARM_SVC_MODE_ARM;                  /* CPSR  (Enable IRQ and FIQ interrupts, ARM-mode)   */
