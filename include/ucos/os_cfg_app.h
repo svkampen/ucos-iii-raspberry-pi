@@ -46,7 +46,7 @@
 
 
                                                             /* ---------------------- IDLE TASK --------------------- */
-#define  OS_CFG_IDLE_TASK_STK_SIZE      1024u               /* Stack size (number of CPU_STK elements)                */
+#define  OS_CFG_IDLE_TASK_STK_SIZE        64u               /* Stack size (number of CPU_STK elements)                */
 
 
                                                             /* ------------------ ISR HANDLER TASK ------------------ */
