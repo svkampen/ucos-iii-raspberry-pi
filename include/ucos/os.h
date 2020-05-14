@@ -62,6 +62,7 @@ extern "C" {
 #include <lib_def.h>
 #include <os_type.h>
 #include <os_cpu.h>
+#include <edf_cfg.h>
 
 
 /*
@@ -968,13 +969,19 @@ struct os_tcb {
     OS_STATUS            PendStatus;                        /* Pend status                                            */
 
     OS_STATE             TaskState;                         /* See OS_TASK_STATE_xxx                                  */
+#if !(EDF_CFG_ENABLED)
     OS_PRIO              Prio;                              /* Task priority (0 == highest)                           */
+#endif
     CPU_STK_SIZE         StkSize;                           /* Size of task stack (in number of stack elements)       */
     OS_OPT               Opt;                               /* Task options as passed by OSTaskCreate()               */
 
     OS_OBJ_QTY           PendDataTblEntries;                /* Size of array of objects to pend on                    */
 
     CPU_TS               TS;                                /* Timestamp                                              */
+
+    CPU_TS               EDFPeriod;                         /* Period (for EDF scheduler) */
+    CPU_TS               EDFRelativeDeadline;               /* Relative deadline (to start of period) */
+    CPU_TS               EDFLastActivationTime;             /* Last TS when the task was activated */
 
     OS_SEM_CTR           SemCtr;                            /* Task specific semaphore counter                        */
 
@@ -1165,11 +1172,13 @@ OS_EXT            OS_MUTEX                 *OSMutexDbgListPtr;
 OS_EXT            OS_OBJ_QTY                OSMutexQty;                 /* Number of mutexes created                  */
 #endif
 
+#if !(EDF_CFG_ENABLED)
                                                                         /* PRIORITIES ------------------------------- */
 OS_EXT            OS_PRIO                   OSPrioCur;                  /* Priority of current task                   */
 OS_EXT            OS_PRIO                   OSPrioHighRdy;              /* Priority of highest priority task          */
 OS_EXT            OS_PRIO                   OSPrioSaved;                /* Saved priority level when Post Deferred    */
 extern            CPU_DATA                  OSPrioTbl[OS_PRIO_TBL_SIZE];
+#endif
 
                                                                         /* QUEUES ----------------------------------- */
 #if OS_CFG_Q_EN   > 0u

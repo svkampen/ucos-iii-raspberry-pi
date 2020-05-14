@@ -33,6 +33,7 @@
 #define  MICRIUM_SOURCE
 #include <os.h>
 #include <uart.h>
+#include <edf_cfg.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_core__c = "$Id: $";
@@ -298,6 +299,7 @@ void  OSIntEnter (void)
 ************************************************************************************************************************
 */
 
+#if EDF_CFG_ENABLED == 0u
 void  OSIntExit (void)
 {
     CPU_SR_ALLOC();
@@ -343,6 +345,7 @@ void  OSIntExit (void)
     OSIntCtxSw();                                           /* Perform interrupt level ctx switch                     */
     CPU_INT_EN();
 }
+#endif
 
 /*$PAGE*/
 /*
@@ -385,6 +388,7 @@ void  OSSafetyCriticalStart (void)
 ************************************************************************************************************************
 */
 
+#if EDF_CFG_ENABLED == 0u
 void  OSSched (void)
 {
     CPU_SR_ALLOC();
@@ -417,6 +421,7 @@ void  OSSched (void)
     OS_TASK_SW();                                           /* Perform a task level context switch                    */
     CPU_INT_EN();
 }
+#endif
 
 /*$PAGE*/
 /*
@@ -1991,6 +1996,8 @@ void  OS_Post1 (OS_PEND_OBJ  *p_obj,
     }
 }
 
+
+#if !(EDF_CFG_ENABLED)
 /*$PAGE*/
 /*
 ************************************************************************************************************************
@@ -2414,6 +2421,7 @@ void  OS_RdyListRemove (OS_TCB  *p_tcb)
     p_tcb->PrevPtr = (OS_TCB *)0;
     p_tcb->NextPtr = (OS_TCB *)0;
 }
+#endif
 
 /*$PAGE*/
 /*
@@ -2431,7 +2439,7 @@ void  OS_RdyListRemove (OS_TCB  *p_tcb)
 ************************************************************************************************************************
 */
 
-#if OS_CFG_ISR_POST_DEFERRED_EN > 0u
+#if OS_CFG_ISR_POST_DEFERRED_EN > 0u && !(EDF_CFG_ENABLED)
 void  OS_Sched0 (void)
 {
     CPU_SR_ALLOC();
@@ -2592,6 +2600,8 @@ void  OS_SchedRoundRobin (OS_RDY_LIST  *p_rdy_list)
 ************************************************************************************************************************
 */
 
+#if !(EDF_CFG_ENABLED)
+
 void  OS_TaskBlock (OS_TCB   *p_tcb,
                     OS_TICK   timeout)
 {
@@ -2637,3 +2647,4 @@ void  OS_TaskRdy (OS_TCB  *p_tcb)
         OS_RdyListInsert(p_tcb);                            /* Insert the task in the ready list                      */
     }
 }
+#endif
