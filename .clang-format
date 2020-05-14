@@ -2,7 +2,7 @@
 AlignConsecutiveAssignments: 'true'
 AlignConsecutiveDeclarations: 'true'
 BreakBeforeBraces: Allman
-ColumnLimit: '100'
+ColumnLimit: '80'
 DerivePointerAlignment: 'false'
 IndentWidth: '4'
 KeepEmptyLinesAtTheStartOfBlocks: 'false'
