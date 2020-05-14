@@ -35,7 +35,7 @@
 
 
                                              /* ---------------------------- MISCELLANEOUS -------------------------- */
-#define OS_CFG_APP_HOOKS_EN             1u   /* Enable (1) or Disable (0) application specific hooks                  */
+#define OS_CFG_APP_HOOKS_EN             0u   /* Enable (1) or Disable (0) application specific hooks                  */
 #define OS_CFG_ARG_CHK_EN               1u   /* Enable (1) or Disable (0) argument checking                           */
 #define OS_CFG_CALLED_FROM_ISR_CHK_EN   1u   /* Enable (1) or Disable (0) check for called from ISR                   */
 #define OS_CFG_DBG_EN                   1u   /* Enable (1) debug code/variables                                       */
@@ -45,11 +45,11 @@
 
 #define OS_CFG_PEND_MULTI_EN            1u   /* Enable (1) or Disable (0) code generation for multi-pend feature      */
 
-#define OS_CFG_PRIO_MAX                16u   /* Defines the maximum number of task priorities (see OS_PRIO data type) */
+#define OS_CFG_PRIO_MAX              4095u   /* Defines the maximum number of task priorities (see OS_PRIO data type) */
 
 #define OS_CFG_SCHED_LOCK_TIME_MEAS_EN  1u   /* Include code to measure scheduler lock time                           */
 #define OS_CFG_SCHED_ROUND_ROBIN_EN     1u   /* Include code for Round-Robin scheduling                               */
-#define OS_CFG_STK_SIZE_MIN           128u   /* Minimum allowable task stack size                                     */
+#define OS_CFG_STK_SIZE_MIN            64u   /* Minimum allowable task stack size                                     */
 
 
                                              /* ----------------------------- EVENT FLAGS --------------------------- */
@@ -84,7 +84,7 @@
 
 
                                              /* -------------------------- TASK MANAGEMENT -------------------------- */
-#define OS_CFG_STAT_TASK_EN             1u   /* Enable (1) or Disable(0) the statistics task                          */
+#define OS_CFG_STAT_TASK_EN             0u   /* Enable (1) or Disable(0) the statistics task                          */
 #define OS_CFG_STAT_TASK_STK_CHK_EN     0u   /* Check task stacks from statistic task                                 */
 
 #define OS_CFG_TASK_CHANGE_PRIO_EN      1u   /* Include code for OSTaskChangePrio()                                   */

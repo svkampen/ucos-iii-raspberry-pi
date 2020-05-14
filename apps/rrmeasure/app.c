@@ -19,12 +19,23 @@ static CPU_INT32U switches;
 
 volatile uint32_t* timer32 = (volatile uint32_t*)0x20003004;
 
+static CPU_TS32 deltas[1024000];
+static CPU_INT32U ts_idx;
+
 void DoNothingTask(void *p_arg)
 {
     (void)p_arg;
     OS_ERR err;
 
+    if (timestamp == 0) timestamp = *timer32;
+
     do {
+        CPU_TS32 new_ts = *timer32;
+        if (ts_idx > sizeof(deltas)/sizeof(deltas[0])) goto yield;
+        deltas[ts_idx++] = new_ts - timestamp;
+
+yield:
+        timestamp = *timer32;
         OSSchedRoundRobinYield(&err);
         if (err != OS_ERR_NONE) ERR("OSSchedRoundRobinYield", err);
     } while (DEF_ON);
@@ -36,9 +47,8 @@ void AppTaskStart(void *p_arg)
 
     (void)p_arg;
 
+    ts_idx = 0;
     timestamp = 0;
-    switches = 0;
-    samples = 0;
 
     BSP_Init();
     CPU_Init();
@@ -47,10 +57,6 @@ void AppTaskStart(void *p_arg)
     OSSchedRoundRobinCfg(DEF_ENABLED, 0, &err);
     if (err != OS_ERR_NONE)
         ERR("OSSchedRoundRobinCfg", err);
-
-    OSStatTaskCPUUsageInit(&err);
-    if (err != OS_ERR_NONE)
-        ERR("CPU usage init", err);
 
     for (int i = 0; i < APP_ROUND_ROBIN_TASKS; ++i)
     {
@@ -77,14 +83,19 @@ void AppTaskStart(void *p_arg)
     printf("Starting measurements...\n");
 
     while (1) {
-        BSP_LED_Toggle();
-        OSTimeDlyHMSM(0, 0, 5, 0, OS_OPT_TIME_HMSM_STRICT, &err);
+        OSTimeDlyHMSM(0, 0, 2, 0, OS_OPT_TIME_HMSM_STRICT, &err);
         if (err != OS_ERR_NONE)
         {
             ERR("OSTimeDlyHMSM", err);
         }
-        printf("CPU usage as measured by stat task (in tienduizendsten): %d\n", OSStatTaskCPUUsage);
-        printf("Context switches performed: %d\n", OSTaskCtxSwCtr);
+        printf("Starting delta dump: %d deltas\n", ts_idx);
+        for (int i = 0; i < ts_idx; ++i)
+        {
+            printf("%d ", deltas[i]);
+        }
+        printf("\n");
+        timestamp = *timer32;
+        ts_idx = 0;
     }
 }
 
