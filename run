@@ -1,0 +1,2 @@
+#!/bin/bash
+picocom -b 115200 --send-cmd "python3 send.py" /dev/ttyUSB0
