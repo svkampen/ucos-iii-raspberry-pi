@@ -120,8 +120,8 @@ CPU_INT16U  const  OSDbg_PendListSize          = sizeof(OS_PEND_LIST);
 CPU_INT16U  const  OSDbg_PendObjSize           = sizeof(OS_PEND_OBJ);
 
 
-CPU_INT16U  const  OSDbg_PrioMax               = OS_CFG_PRIO_MAX;              /* Maximum number of priorities        */
-CPU_INT16U  const  OSDbg_PrioTblSize           = sizeof(OSPrioTbl);
+OS_PRIO     const  OSDbg_PrioMax               = OS_CFG_PRIO_MAX;              /* Maximum number of priorities        */
+CPU_INT32U  const  OSDbg_PrioTblSize           = sizeof(OSPrioTbl);
 
 CPU_INT16U  const  OSDbg_PtrSize               = sizeof(void *);               /* Size in Bytes of a pointer          */
 
