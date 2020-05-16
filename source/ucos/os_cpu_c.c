@@ -48,6 +48,7 @@ const  CPU_CHAR  *os_cpu_c__c = "$Id: $";
 #include  <os.h>
 #include <uart.h>
 #include <printf.h>
+#include <runtime_assert.h>
 
 /*
 *********************************************************************************************************
@@ -265,11 +266,12 @@ CPU_STK  *OSTaskStkInit (OS_TASK_PTR    p_task,
     (void)opt;                                              /* Prevent compiler warning                               */
     (void)p_stk_limit;
 
-    p_stk     = &p_stk_base[stk_size];                      /* Load stack pointer                                */
-    *--p_stk  = (CPU_STK)ARM_SVC_MODE_ARM;                  /* CPSR  (Enable IRQ and FIQ interrupts, ARM-mode)   */
-    *--p_stk  = (CPU_STK)p_task;                         /* Entry Point                                       */
+    p_stk     = &p_stk_base[stk_size];                      /* Load stack pointer  (8-byte-aligned)              */
+    ASSERT(((uint32_t)p_stk & 0b111) == 0);
 
-    *--p_stk  = (CPU_STK)OS_TaskReturn;                     /* R14 (LR)                                          */
+    *--p_stk  = (CPU_STK)ARM_SVC_MODE_ARM;                  /* CPSR  (Enable IRQ and FIQ interrupts, ARM-mode)   */
+    *--p_stk  = (CPU_STK)p_task;                            /* Entry Point                                       */
+
     *--p_stk  = (CPU_STK)0x12121212u;                       /* R12                                               */
     *--p_stk  = (CPU_STK)0x11111111u;                       /* R11                                               */
     *--p_stk  = (CPU_STK)0x10101010u;                       /* R10                                               */
@@ -283,7 +285,8 @@ CPU_STK  *OSTaskStkInit (OS_TASK_PTR    p_task,
     *--p_stk  = (CPU_STK)0x02020202u;                       /* R2                                                */
     *--p_stk  = (CPU_STK)0x01010101u;                       /* R1                                                */
     *--p_stk  = (CPU_STK)p_arg;                             /* R0 : argument                                     */
-    *--p_stk  = 0;                                          /* Stack alignment difference (I think just zero? We'll see >.> FIXME later otherwise */
+    *--p_stk  = (CPU_STK)OS_TaskReturn;                     /* R14 (LR)                                          */
+    *--p_stk  = 0;                                          /* Stack alignment difference (zero, see assertion)  */
 
     /* TOP OF STACK
      * SPSR

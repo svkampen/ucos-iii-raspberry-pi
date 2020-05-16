@@ -52,15 +52,15 @@ const  CPU_CHAR  *os_cfg_app__c = "$Id: $";
 ************************************************************************************************************************
 */
 
-CPU_STK        OSCfg_IdleTaskStk   [OS_CFG_IDLE_TASK_STK_SIZE];
+CPU_STK        OSCfg_IdleTaskStk   [OS_CFG_IDLE_TASK_STK_SIZE] __attribute__ ((aligned (8)));
 
 #if (OS_CFG_ISR_POST_DEFERRED_EN > 0u)
 OS_INT_Q       OSCfg_IntQ          [OS_CFG_INT_Q_SIZE];
-CPU_STK        OSCfg_IntQTaskStk   [OS_CFG_INT_Q_TASK_STK_SIZE];
+CPU_STK        OSCfg_IntQTaskStk   [OS_CFG_INT_Q_TASK_STK_SIZE] __attribute__ ((aligned (8)));
 #endif
 
 #if (OS_CFG_ISR_STK_SIZE > 0u)
-CPU_STK        OSCfg_ISRStk        [OS_CFG_ISR_STK_SIZE];
+CPU_STK        OSCfg_ISRStk        [OS_CFG_ISR_STK_SIZE] __attribute__ ((aligned (8)));
 #endif
 
 #if (OS_MSG_EN > 0u)
@@ -68,14 +68,14 @@ OS_MSG         OSCfg_MsgPool       [OS_CFG_MSG_POOL_SIZE];
 #endif
 
 #if (OS_CFG_STAT_TASK_EN > 0u)
-CPU_STK        OSCfg_StatTaskStk   [OS_CFG_STAT_TASK_STK_SIZE];
+CPU_STK        OSCfg_StatTaskStk   [OS_CFG_STAT_TASK_STK_SIZE] __attribute__ ((aligned (8)));
 #endif
 
-CPU_STK        OSCfg_TickTaskStk   [OS_CFG_TICK_TASK_STK_SIZE];
+CPU_STK        OSCfg_TickTaskStk   [OS_CFG_TICK_TASK_STK_SIZE] __attribute__ ((aligned (8)));
 OS_TICK_SPOKE  OSCfg_TickWheel     [OS_CFG_TICK_WHEEL_SIZE];
 
 #if (OS_CFG_TMR_EN > 0u)
-CPU_STK        OSCfg_TmrTaskStk    [OS_CFG_TMR_TASK_STK_SIZE];
+CPU_STK        OSCfg_TmrTaskStk    [OS_CFG_TMR_TASK_STK_SIZE] __attribute__ ((aligned (8)));
 OS_TMR_SPOKE   OSCfg_TmrWheel      [OS_CFG_TMR_WHEEL_SIZE];
 #endif
 
