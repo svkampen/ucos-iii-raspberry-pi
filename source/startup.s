@@ -17,6 +17,7 @@
  * so we'll branch to it immediately.
  */
 
+.func _start
 _start:
     ldr pc, reset_handler
     ldr pc, undefined_handler
@@ -26,6 +27,7 @@ _start:
     ldr pc, unused_handler
     ldr pc, irq_handler
     ldr pc, fiq_handler
+.endfunc
 
 reset_handler:     .word reset
 undefined_handler: .word hang
@@ -36,6 +38,7 @@ unused_handler:    .word hang
 irq_handler:       .word irq
 fiq_handler:       .word hang
 
+.func reset
 reset:
     mov r10,r1
 
@@ -87,13 +90,16 @@ reset:
     // mov r0,#0x40000000
     // fmxr fpexc,r0
 
+    /* allow unaligned accesses. */
+    mrc p15, 0, r0, c1, c0, 0
+    orr r0,r0,#0x400000
+    mcr p15, 0, r0, c1, c0, 0
 
 // Zero out C BSS
 
     ldr r0, =__bss_start
     ldr r1, =__bss_end
     mov r2, #0
-
 zero_loop$:
     cmp r0,r1
     strls r2,[r0],#4
@@ -102,23 +108,30 @@ zero_loop$:
     mov r1, r10
 
     bl main
+.endfunc
 
 .global hang
+.func hang
 hang: b hang
+.endfunc
 
 .globl GETPC
     mov r0,lr
     bx lr
 
 .globl int_enable_irqs
+.func int_enable_irqs
 int_enable_irqs:
     cpsie i // interrupt enable: normal interrupts
     bx lr
+.endfunc
 
 .globl int_disable_irqs
+.func int_disable_irqs
 int_disable_irqs:
     cpsid i
     bx lr
+.endfunc
 
 .global dummy
 dummy:
@@ -134,15 +147,10 @@ get32:
     ldr r0,[r0]
     bx lr
 
-.global data_memory_barrier
-data_memory_barrier:
-    mov r0,#0
-    mcr p15, 0, r0, c7, c10, 5
-    bx lr
-
 swi:
     b swi
 
+.func irq
 irq:
     OS_IRQ_CTX_SAVE // OS_CTX_SAVE, but saves SPSR_irq instead of CPSR
 
@@ -160,6 +168,7 @@ irq_nested$:
     bl int_handle_irq
 
     OS_CTX_RESTORE
+.endfunc
 
     //push {r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}
     //bl OS_CPU_IRQ_ISR
@@ -171,14 +180,18 @@ irq_nested$:
  * program order.
  */
 .global __dmb
+.func __dmb
 __dmb:
     mov r0,#0
     mcr p15, 0, r0, c7, c10, 5
     bx lr
+.endfunc
 
 /* Flush Prefetch Buffer. Used after CP15 access register writes, for instance. */
 .global __fpb
+.func __fpb
 __fpb:
     mov r0,#0
     mcr p15, 0, r0, c7, c5, 4
     bx lr
+.endfunc

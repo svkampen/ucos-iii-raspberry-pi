@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "interrupts.h"
+#include <printf.h>
 #include "uart.h"
 #include <os.h>
 

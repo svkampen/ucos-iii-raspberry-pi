@@ -33,7 +33,7 @@ u32 arch_info_init(const struct atag* tag)
         switch (tag->tag)
         {
             case ATAG_MEM:
-                printf("Found memory tag: size %d, start %d\n",
+                printf("Found memory tag: size %lu, start %lu\n",
                        tag->mem_size,
                        tag->mem_start);
                 memory_size += tag->mem_size - tag->mem_start;
@@ -46,7 +46,7 @@ u32 arch_info_init(const struct atag* tag)
             case ATAG_INITRD2:
                 uart_send("Found initrd tag.\n"); break;
             default:
-                printf("Found other tag: %x\n", tag->tag);
+                printf("Found other tag: %lx\n", tag->tag);
                 break;
         }
     } while ((tag = next(tag)));

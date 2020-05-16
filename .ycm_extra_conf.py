@@ -1,5 +1,8 @@
 flags = []
 
+def Settings(*args, **kwargs):
+    return FlagsForFile(*args, **kwargs)
+
 def FlagsForFile(filename, **kwargs):
     if (filename.endswith("c") or filename.endswith('h')):
         base_inc_path = '/home/sam/scriptie/ucosiii/include'
