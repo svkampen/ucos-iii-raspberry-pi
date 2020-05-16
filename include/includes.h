@@ -14,4 +14,7 @@
 #include <os_cfg_app.h>
 #include <bsp.h>
 
+#include <startup.h>
 #include <os.h>
+#include <edf_heap.h>
+#include <sched_edf.h>

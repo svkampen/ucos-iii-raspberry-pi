@@ -25,10 +25,12 @@
 *
 *           Please help us continue to provide the embedded community with the finest software available.
 *           Your honesty is greatly appreciated.
-*
+#endif*
 *           You can contact us at www.micrium.com, or by phone at +1 (954) 217-2036.
 ************************************************************************************************************************
 */
+
+#include <edf_cfg.h>
 
 #ifndef OS_CFG_H
 #define OS_CFG_H
@@ -48,7 +50,7 @@
 #define OS_CFG_PRIO_MAX              4095u   /* Defines the maximum number of task priorities (see OS_PRIO data type) */
 
 #define OS_CFG_SCHED_LOCK_TIME_MEAS_EN  1u   /* Include code to measure scheduler lock time                           */
-#define OS_CFG_SCHED_ROUND_ROBIN_EN     1u   /* Include code for Round-Robin scheduling                               */
+#define OS_CFG_SCHED_ROUND_ROBIN_EN     (!(EDF_CFG_ENABLED) && 1u)   /* Include code for Round-Robin scheduling                               */
 #define OS_CFG_STK_SIZE_MIN            64u   /* Minimum allowable task stack size                                     */
 
 
@@ -87,7 +89,7 @@
 #define OS_CFG_STAT_TASK_EN             0u   /* Enable (1) or Disable(0) the statistics task                          */
 #define OS_CFG_STAT_TASK_STK_CHK_EN     0u   /* Check task stacks from statistic task                                 */
 
-#define OS_CFG_TASK_CHANGE_PRIO_EN      1u   /* Include code for OSTaskChangePrio()                                   */
+#define OS_CFG_TASK_CHANGE_PRIO_EN      !(EDF_CFG_ENABLED) && 1u   /* Include code for OSTaskChangePrio()                                   */
 #define OS_CFG_TASK_DEL_EN              0u   /* Include code for OSTaskDel()                                          */
 #define OS_CFG_TASK_Q_EN                1u   /* Include code for OSTaskQXXXX()                                        */
 #define OS_CFG_TASK_Q_PEND_ABORT_EN     0u   /* Include code for OSTaskQPendAbort()                                   */

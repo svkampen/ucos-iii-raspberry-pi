@@ -123,7 +123,7 @@ OSStartHighRdy:
 //              a) Save the current task's context onto the current task's stack,
 //              b) OSTCBCurPtr->StkPtr = SP//
 //              c) OSTaskSwHook()//
-//              d) OSPrioCur           = OSPrioHighRdy//
+//              d) OSPrioCur   = OSPrioHighRdy; /* done in OSTaskSwHook now */
 //              e) OSTCBCurPtr         = OSTCBHighRdyPtr//
 //              f) SP                  = OSTCBHighRdyPtr->StkPtr//
 //              g) Restore the new task's context from the new task's stack,
@@ -146,11 +146,6 @@ OSCtxSw:
 
     blx OSTaskSwHook
 
-    LDR     R0, =OSPrioCur                                      // OSPrioCur   = OSPrioHighRdy//
-    LDR     R1, =OSPrioHighRdy
-    LDRB    R2, [R1]
-    STRB    R2, [R0]
-
     LDR     R0, =OSTCBCurPtr                                    // OSTCBCurPtr = OSTCBHighRdyPtr//
     LDR     R1, =OSTCBHighRdyPtr
     LDR     R2, [R1]
@@ -171,7 +166,7 @@ OSCtxSw:
 //
 //           2) The pseudo-code for OSCtxSw() is:
 //              a) OSTaskSwHook();
-//              b) OSPrioCur   = OSPrioHighRdy;
+//              b) OSPrioCur   = OSPrioHighRdy; /* done in OSTaskSwHook now */
 //              c) OSTCBCurPtr = OSTCBHighRdyPtr;
 //              d) SP          = OSTCBHighRdyPtr->OSTCBStkPtr;
 //              e) Restore the new task's context from the new task's stack,
@@ -184,11 +179,6 @@ OSCtxSw:
 
 OSIntCtxSw:
     blx OSTaskSwHook
-
-    LDR     R0, =OSPrioCur                                      // OSPrioCur = OSPrioHighRdy//
-    LDR     R1, =OSPrioHighRdy
-    LDRB    R2, [R1]
-    STRB    R2, [R0]
 
     LDR     R0, =OSTCBCurPtr                                    // OSTCBCurPtr = OSTCBHighRdyPtr//
     LDR     R1, =OSTCBHighRdyPtr

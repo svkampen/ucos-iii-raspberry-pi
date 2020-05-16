@@ -844,6 +844,7 @@ void  OS_TmrInit (OS_ERR  *p_err)
         return;
     }
 
+#if !(EDF_CFG_ENABLED)
     OSTaskCreate((OS_TCB     *)&OSTmrTaskTCB,
                  (CPU_CHAR   *)((void *)"uC/OS-III Timer Task"),
                  (OS_TASK_PTR )OS_TmrTask,
@@ -857,6 +858,9 @@ void  OS_TmrInit (OS_ERR  *p_err)
                  (void       *)0,
                  (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS),
                  (OS_ERR     *)p_err);
+#else
+    OSTaskCreate(&OSTmrTaskTCB, "uC/OS-III Timer Task", OS_TmrTask, 0, OSCfg_TmrTaskStkBasePtr, OSCfg_TmrTaskStkLimit, OSCfg_TmrTaskStkSize, 0, 1, 24000000, 0, 0, p_err);
+#endif
 }
 
 /*$PAGE*/

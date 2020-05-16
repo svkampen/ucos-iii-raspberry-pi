@@ -971,6 +971,10 @@ struct os_tcb {
     OS_STATE             TaskState;                         /* See OS_TASK_STATE_xxx                                  */
 #if !(EDF_CFG_ENABLED)
     OS_PRIO              Prio;                              /* Task priority (0 == highest)                           */
+#else
+    OS_TICK              EDFPeriod;                         /* Period, in timer ticks */
+    CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
+    CPU_TS64             EDFLastActivationTime;             /* Last TS when the task was activated */
 #endif
     CPU_STK_SIZE         StkSize;                           /* Size of task stack (in number of stack elements)       */
     OS_OPT               Opt;                               /* Task options as passed by OSTaskCreate()               */
@@ -978,10 +982,6 @@ struct os_tcb {
     OS_OBJ_QTY           PendDataTblEntries;                /* Size of array of objects to pend on                    */
 
     CPU_TS               TS;                                /* Timestamp                                              */
-
-    CPU_TS               EDFPeriod;                         /* Period (for EDF scheduler) */
-    CPU_TS               EDFRelativeDeadline;               /* Relative deadline (to start of period) */
-    CPU_TS               EDFLastActivationTime;             /* Last TS when the task was activated */
 
     OS_SEM_CTR           SemCtr;                            /* Task specific semaphore counter                        */
 
@@ -1178,6 +1178,9 @@ OS_EXT            OS_PRIO                   OSPrioCur;                  /* Prior
 OS_EXT            OS_PRIO                   OSPrioHighRdy;              /* Priority of highest priority task          */
 OS_EXT            OS_PRIO                   OSPrioSaved;                /* Saved priority level when Post Deferred    */
 extern            CPU_DATA                  OSPrioTbl[OS_PRIO_TBL_SIZE];
+#else
+OS_EXT            OS_TCB*                   OSEdfHeap[EDF_CFG_MAX_TASKS];
+OS_EXT            CPU_INT32U                OSEdfHeapSize;
 #endif
 
                                                                         /* QUEUES ----------------------------------- */
@@ -1652,6 +1655,7 @@ void          OSTaskChangePrio          (OS_TCB                *p_tcb,
                                          OS_ERR                *p_err);
 #endif
 
+#if !(EDF_CFG_ENABLED)
 void          OSTaskCreate              (OS_TCB                *p_tcb,
                                          CPU_CHAR              *p_name,
                                          OS_TASK_PTR            p_task,
@@ -1665,6 +1669,13 @@ void          OSTaskCreate              (OS_TCB                *p_tcb,
                                          void                  *p_ext,
                                          OS_OPT                 opt,
                                          OS_ERR                *p_err);
+#else
+void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
+                  void* p_arg, CPU_STK* p_stk_base, CPU_STK_SIZE stk_limit,
+                  CPU_STK_SIZE stk_size, OS_MSG_QTY q_size, OS_TICK period,
+                  CPU_TS64 relative_deadline, void* p_ext, OS_OPT opt,
+                  OS_ERR* err);
+#endif
 
 #if OS_CFG_TASK_DEL_EN > 0u
 void          OSTaskDel                 (OS_TCB                *p_tcb,

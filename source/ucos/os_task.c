@@ -32,6 +32,8 @@
 
 #define  MICRIUM_SOURCE
 #include <os.h>
+#include <edf_cfg.h>
+#include <runtime_assert.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_task__c = "$Id: $";
@@ -58,7 +60,7 @@ const  CPU_CHAR  *os_task__c = "$Id: $";
 ************************************************************************************************************************
 */
 
-#if OS_CFG_TASK_CHANGE_PRIO_EN > 0u
+#if OS_CFG_TASK_CHANGE_PRIO_EN > 0u && (!EDF_CFG_ENABLED)
 void  OSTaskChangePrio (OS_TCB   *p_tcb,
                         OS_PRIO   prio_new,
                         OS_ERR   *p_err)
@@ -246,6 +248,7 @@ void  OSTaskChangePrio (OS_TCB   *p_tcb,
 ************************************************************************************************************************
 */
 /*$PAGE*/
+#if !(EDF_CFG_ENABLED)
 void  OSTaskCreate (OS_TCB        *p_tcb,
                     CPU_CHAR      *p_name,
                     OS_TASK_PTR    p_task,
@@ -430,6 +433,7 @@ void  OSTaskCreate (OS_TCB        *p_tcb,
 
     OSSched();
 }
+#endif
 
 /*$PAGE*/
 /*
@@ -1502,7 +1506,6 @@ OS_SEM_CTR  OSTaskSemPost (OS_TCB  *p_tcb,
     CPU_TS      ts;
 
 
-
 #ifdef OS_SAFETY_CRITICAL
     if (p_err == (OS_ERR *)0) {
         OS_SAFETY_CRITICAL_EXCEPTION();
@@ -2072,7 +2075,13 @@ void  OS_TaskInitTCB (OS_TCB  *p_tcb)
     p_tcb->PendStatus         = (OS_STATUS      )OS_STATUS_PEND_OK;
     p_tcb->TaskState          = (OS_STATE       )OS_TASK_STATE_RDY;
 
+#if !(EDF_CFG_ENABLED)
     p_tcb->Prio               = (OS_PRIO        )OS_PRIO_INIT;
+#else
+    p_tcb->EDFPeriod = 0;
+    p_tcb->EDFRelativeDeadline = 0;
+    p_tcb->EDFLastActivationTime = 0;
+#endif
 
 #if OS_CFG_DBG_EN > 0u
     p_tcb->DbgPrevPtr         = (OS_TCB        *)0;
@@ -2486,6 +2495,12 @@ OS_SEM_CTR  OS_TaskSemPost (OS_TCB  *p_tcb,
 void   OS_TaskSuspend (OS_TCB  *p_tcb,
                        OS_ERR  *p_err)
 {
+#if EDF_CFG_ENABLED
+    (void)p_tcb;
+    (void)p_err;
+    ASSERT(false);
+#else
+
     CPU_SR_ALLOC();
 
 
@@ -2546,5 +2561,6 @@ void   OS_TaskSuspend (OS_TCB  *p_tcb,
     }
 
     OSSched();
+#endif
 }
 #endif

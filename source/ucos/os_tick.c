@@ -32,7 +32,9 @@
 
 #define  MICRIUM_SOURCE
 #include <os.h>
-#include <uart.h>
+#include <printf.h>
+#include <edf_heap.h>
+#include <sched_edf.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_tick__c = "$Id: $";
@@ -64,8 +66,13 @@ void  OS_TickTask (void  *p_arg)
     OS_ERR  err;
     CPU_TS  ts;
 
-
     p_arg = p_arg;                                          /* Prevent compiler warning                               */
+
+#if EDF_CFG_ENABLED
+    /* Effectively set the next deadline to now + 2 ticks */
+    OS_EDF_RESET_ACTIVATION_TIME;
+    OS_EDF_FINISH_INSTANCE_NO_BLOCK;
+#endif
 
     while (DEF_ON) {
         (void)OSTaskSemPend((OS_TICK  )0,
@@ -77,6 +84,9 @@ void  OS_TickTask (void  *p_arg)
                 OS_TickListUpdate();                        /* Update all tasks waiting for time                      */
             }
         }
+#if EDF_CFG_ENABLED
+        OS_EDF_FINISH_INSTANCE_NO_BLOCK;
+#endif
     }
 }
 
@@ -134,6 +144,7 @@ void  OS_TickTaskInit (OS_ERR  *p_err)
         return;
     }
 
+#if !(EDF_CFG_ENABLED)
     OSTaskCreate((OS_TCB     *)&OSTickTaskTCB,
                  (CPU_CHAR   *)((void *)"uC/OS-III Tick Task"),
                  (OS_TASK_PTR )OS_TickTask,
@@ -147,6 +158,10 @@ void  OS_TickTaskInit (OS_ERR  *p_err)
                  (void       *)0,
                  (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS),
                  (OS_ERR     *)p_err);
+#else
+    OSTaskCreate(&OSTickTaskTCB, "uC/OS-III Tick Task", OS_TickTask, 0, OSCfg_TickTaskStkBasePtr, OSCfg_TickTaskStkLimit,
+                 OSCfg_TickTaskStkSize, 0, 1, TICKS_TO_USEC(1), 0, OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS, p_err);
+#endif
 }
 
 /*$PAGE*/

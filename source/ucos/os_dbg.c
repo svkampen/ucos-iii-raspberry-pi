@@ -32,6 +32,7 @@
 
 #define  MICRIUM_SOURCE
 #include <os.h>
+#include <edf_cfg.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_dbg__c = "$Id: $";
@@ -120,8 +121,10 @@ CPU_INT16U  const  OSDbg_PendListSize          = sizeof(OS_PEND_LIST);
 CPU_INT16U  const  OSDbg_PendObjSize           = sizeof(OS_PEND_OBJ);
 
 
+#if !(EDF_CFG_ENABLED)
 OS_PRIO     const  OSDbg_PrioMax               = OS_CFG_PRIO_MAX;              /* Maximum number of priorities        */
 CPU_INT32U  const  OSDbg_PrioTblSize           = sizeof(OSPrioTbl);
+#endif
 
 CPU_INT16U  const  OSDbg_PtrSize               = sizeof(void *);               /* Size in Bytes of a pointer          */
 
@@ -272,10 +275,13 @@ CPU_INT32U  const  OSDbg_DataSize = sizeof(OSIntNestingCtr)
                                   + sizeof(OSMutexQty)
 #endif
 
+#if !(EDF_CFG_ENABLED)
+
                                   + sizeof(OSPrioCur)
                                   + sizeof(OSPrioHighRdy)
                                   + sizeof(OSPrioSaved)
                                   + sizeof(OSPrioTbl)
+#endif
 
 #if OS_CFG_Q_EN > 0u
 #if OS_CFG_DBG_EN > 0u
@@ -426,8 +432,10 @@ void  OS_Dbg_Init (void)
     p_temp = (void const *)&OSDbg_PendListSize;
     p_temp = (void const *)&OSDbg_PendObjSize;
 
+#if !(EDF_CFG_ENABLED)
     p_temp = (void const *)&OSDbg_PrioMax;
     p_temp = (void const *)&OSDbg_PrioTblSize;
+#endif
 
     p_temp = (void const *)&OSDbg_PtrSize;
 

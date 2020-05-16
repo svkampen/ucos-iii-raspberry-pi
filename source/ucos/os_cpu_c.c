@@ -48,6 +48,7 @@ const  CPU_CHAR  *os_cpu_c__c = "$Id: $";
 #include  <os.h>
 #include <uart.h>
 #include <printf.h>
+#include <edf_heap.h>
 #include <runtime_assert.h>
 
 /*
@@ -331,6 +332,10 @@ CPU_STK  *OSTaskStkInit (OS_TASK_PTR    p_task,
 
 void  OSTaskSwHook (void)
 {
+    /* Move this out of assembly so we can use preprocessor conditionals */
+#if !(EDF_CFG_ENABLED)
+    OSPrioCur = OSPrioHighRdy;
+#endif
 #ifdef DBUGTASKSW
     printf("Stored on stack/restoring to registers:\n");
     uint32_t* suspended_stack = OSTCBCurPtr->StkPtr;

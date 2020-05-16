@@ -1,21 +1,25 @@
 #include <edf_cfg.h>
 #include <includes.h>
 #include <printf.h>
+#include <runtime_assert.h>
+#include <inttypes.h>
 
 #if EDF_CFG_ENABLED
-OS_TCB*    OSEdfHeap[EDF_CFG_MAX_TASKS];
-CPU_INT32U OSEdfHeapSize;
-
 int OS_EdfHeapCompare(OS_TCB* a, OS_TCB* b)
 {
-    CPU_TS aAbsDeadline = a->EDFLastActivationTime + a->EDFRelativeDeadline;
-    CPU_TS bAbsDeadline = b->EDFLastActivationTime + a->EDFRelativeDeadline;
+    CPU_TS64 aAbsDeadline = EDF_DEADLINE_ABSOLUTE(a);
+    CPU_TS64 bAbsDeadline = EDF_DEADLINE_ABSOLUTE(b);
     return (aAbsDeadline > bAbsDeadline) ? 1 : ((aAbsDeadline < bAbsDeadline) ? -1 : 0);
 }
 
 OS_TCB* OS_EdfHeapPeek(void)
 {
     return OSEdfHeap[0];
+}
+
+void print_task_name_deadline(int idx, OS_TCB* task)
+{
+    printf("%d %s P %lu RD %llx LAT %llx", idx, task->NamePtr, task->EDFPeriod, task->EDFRelativeDeadline, task->EDFLastActivationTime);
 }
 
 void OS_EdfHeapSiftUp(int index)
@@ -41,11 +45,29 @@ void OS_EdfHeapSiftUp(int index)
     }
 }
 
+void print_helper(unsigned idx)
+{
+    if (idx >= OSEdfHeapSize) return;
+    printf("Node ");
+    print_task_name_deadline(idx, OSEdfHeap[idx]);
+    printf(" Left (");
+    print_helper(2 * idx + 1);
+    printf(") Right (");
+    print_helper(2 * idx + 2);
+    printf(")");
+}
+
+void OS_EdfPrintHeap()
+{
+    print_helper(0);
+    printf("\n");
+}
+
 void OS_EdfHeapSiftDown(int index)
 {
-    int   left_index, right_index;
+    uint32_t left_index, right_index;
     void *element, *left_element, *right_element;
-    int   l_or_r_swap;
+    int l_or_r_swap;
 
     while (DEF_ON)
     {
@@ -99,10 +121,41 @@ void OS_EdfHeapSiftDown(int index)
 void OS_EdfHeapInit(void)
 {
     OSEdfHeapSize = 0;
-    for (int i = 0; i < EDF_CFG_MAX_TASKS; ++i)
+    for (unsigned i = 0; i < EDF_CFG_MAX_TASKS; ++i)
     {
         OSEdfHeap[i] = NULL;
     }
+}
+
+/*
+ * Sift an element into place in the heap. Can be used when, for instance,
+ * a task deadline has changed without it being removed from the heap (since
+ * removal and insertion automatically sift).
+ */
+void OS_EdfHeapSift(OS_TCB* p_tcb)
+{
+    CPU_SR_ALLOC();
+    OS_CRITICAL_ENTER();
+    int idx = -1;
+    for (unsigned i = 0; i < OSEdfHeapSize; ++i)
+    {
+        if (OSEdfHeap[i] == p_tcb)
+        {
+            idx = i;
+            break;
+        }
+    }
+
+    ASSERT(idx >= 0); 
+
+    int parent_idx = (idx - 1) / 2;
+    /* Sift down if greater than or equal to parent, up otherwise. */
+    if (OS_EdfHeapCompare(OSEdfHeap[idx], OSEdfHeap[parent_idx]) >= 0)
+        OS_EdfHeapSiftDown(idx);
+    else
+        OS_EdfHeapSiftUp(idx);
+
+    OS_CRITICAL_EXIT();
 }
 
 void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
@@ -112,32 +165,40 @@ void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
         *p_err = OS_ERR_RDY_QUEUE_FULL;
         return;
     }
+
+    CPU_SR_ALLOC();
+    OS_CRITICAL_ENTER();
     OSEdfHeap[OSEdfHeapSize++] = p_tcb;
     *p_err = OS_ERR_NONE;
 
     OS_EdfHeapSiftUp(OSEdfHeapSize - 1);
+    OS_CRITICAL_EXIT();
 }
 
 void OS_EdfHeapRemove(OS_TCB* p_tcb)
 {
     // for efficiency we should probably keep a reverse mapping.
     // simple implementation first though.
+    CPU_SR_ALLOC();
+
+    OS_CRITICAL_ENTER();
     int idx = -1;
-    for (int i = 0; i < OSEdfHeapSize; ++i)
+    for (unsigned i = 0; i < OSEdfHeapSize; ++i)
     {
         if (OSEdfHeap[i] == p_tcb)
+        {
             idx = i;
             break;
+        }
     }
 
-    if (idx == -1)
-        printf("Trying to remove a task from heap that's not on the heap?");
+    ASSERT(idx >= 0);
 
-    OS_TCB* last_task = OSEdfHeap[OSEdfHeapSize--];
+    OS_TCB* last_task = OSEdfHeap[--OSEdfHeapSize];
     OSEdfHeap[idx] = last_task;
     int parent_idx = (idx - 1) / 2;
     /* Sift down if greater than or equal to parent, up otherwise. */
-    if (OS_EdfHeapCompare(last_task, OSEdfHeap[parent_idx]) > 0)
+    if (OS_EdfHeapCompare(last_task, OSEdfHeap[parent_idx]) >= 0)
         OS_EdfHeapSiftDown(idx);
     else
         OS_EdfHeapSiftUp(idx);
@@ -145,6 +206,6 @@ void OS_EdfHeapRemove(OS_TCB* p_tcb)
 #if EDF_CFG_HEAP_CHECK_VALID_EN
     OS_EdfHeapCheck();
 #endif
-
+    OS_CRITICAL_EXIT();
 }
 #endif

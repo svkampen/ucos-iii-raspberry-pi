@@ -34,6 +34,8 @@
 #include <os.h>
 #include <uart.h>
 #include <edf_cfg.h>
+#include <edf_heap.h>
+#include <runtime_assert.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_core__c = "$Id: $";
@@ -79,9 +81,11 @@ void  OSInit (OS_ERR  *p_err)
     OSTCBCurPtr                     = (OS_TCB *)0;          /* Initialize OS_TCB pointers to a known state            */
     OSTCBHighRdyPtr                 = (OS_TCB *)0;
 
+#if !(EDF_CFG_ENABLED)
     OSPrioCur                       = (OS_PRIO)0;           /* Initialize priority variables to a known state         */
     OSPrioHighRdy                   = (OS_PRIO)0;
     OSPrioSaved                     = (OS_PRIO)0;
+#endif
 
 #if OS_CFG_SCHED_LOCK_TIME_MEAS_EN > 0u
     OSSchedLockTimeBegin            = (CPU_TS)0;
@@ -125,9 +129,13 @@ void  OSInit (OS_ERR  *p_err)
     OSTaskRegNextAvailID    = (OS_REG_ID)0;
 #endif
 
+#if EDF_CFG_ENABLED
+    OS_EdfHeapInit();
+#else
     OS_PrioInit();                                          /* Initialize the priority bitmap table                   */
 
     OS_RdyListInit();                                       /* Initialize the Ready List                              */
+#endif
 
     
 #if OS_CFG_FLAG_EN > 0u                                     /* Initialize the Event Flag module                       */
@@ -717,9 +725,13 @@ void  OSStart (OS_ERR  *p_err)
 #endif
 
     if (OSRunning == OS_STATE_OS_STOPPED) {
+#if !(EDF_CFG_ENABLED)
         OSPrioHighRdy   = OS_PrioGetHighest();              /* Find the highest priority                              */
         OSPrioCur       = OSPrioHighRdy;
         OSTCBHighRdyPtr = OSRdyList[OSPrioHighRdy].HeadPtr;
+#else
+        OSTCBHighRdyPtr = OS_EdfHeapPeek();
+#endif
         OSTCBCurPtr     = OSTCBHighRdyPtr;
         OSRunning       = OS_STATE_OS_RUNNING;
         OSStartHighRdy();                                   /* Execute target specific code to start task             */
@@ -825,6 +837,7 @@ void  OS_IdleTaskInit (OS_ERR  *p_err)
 #endif
 
     OSIdleTaskCtr = (OS_IDLE_CTR)0;
+#if !(EDF_CFG_ENABLED)
                                                             /* ---------------- CREATE THE IDLE TASK ---------------- */
     OSTaskCreate((OS_TCB     *)&OSIdleTaskTCB,
                  (CPU_CHAR   *)((void *)"uC/OS-III Idle Task"),
@@ -839,6 +852,9 @@ void  OS_IdleTaskInit (OS_ERR  *p_err)
                  (void       *)0,
                  (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS),
                  (OS_ERR     *)p_err);
+#else
+    OSTaskCreate(&OSIdleTaskTCB, "uC/OS-III Idle Task", OS_IdleTask, 0, OSCfg_IdleTaskStkBasePtr, OSCfg_IdleTaskStkLimit, OSCfg_IdleTaskStkSize, 0, UINT16_MAX, UINT32_MAX, 0, OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS, p_err);
+#endif
 }
 
 /*$PAGE*/
@@ -1278,6 +1294,11 @@ void  OS_PendDbgNameRemove (OS_PEND_OBJ  *p_obj,
 void  OS_PendListChangePrio (OS_TCB   *p_tcb,
                              OS_PRIO   prio_new)
 {
+#if EDF_CFG_ENABLED
+    (void)p_tcb;
+    (void)prio_new;
+    ASSERT(false);
+#else
     OS_OBJ_QTY      n_pend_list;                                    /* Number of pend lists                           */
     OS_PEND_DATA   *p_pend_data;
     OS_PEND_LIST   *p_pend_list;
@@ -1300,6 +1321,7 @@ void  OS_PendListChangePrio (OS_TCB   *p_tcb,
         p_pend_data++;                                              /* Point to next wait list                        */
         n_pend_list--;
     }
+#endif
 }
 
 /*$PAGE*/
@@ -1463,7 +1485,11 @@ void  OS_PendListInsertHead (OS_PEND_LIST  *p_pend_list,
 void  OS_PendListInsertPrio (OS_PEND_LIST  *p_pend_list,
                              OS_PEND_DATA  *p_pend_data)
 {
+#if EDF_CFG_ENABLED
+    CPU_TS64       prio;
+#else
     OS_PRIO        prio;
+#endif
     OS_TCB        *p_tcb;
     OS_TCB        *p_tcb_next;
     OS_PEND_DATA  *p_pend_data_prev;
@@ -1472,7 +1498,11 @@ void  OS_PendListInsertPrio (OS_PEND_LIST  *p_pend_list,
 
 
     p_tcb = p_pend_data->TCBPtr;                                      /* Obtain the priority of the task to insert    */
+#if EDF_CFG_ENABLED
+    prio  = EDF_DEADLINE_ABSOLUTE(p_tcb);
+#else
     prio  = p_tcb->Prio;
+#endif
     if (p_pend_list->NbrEntries == (OS_OBJ_QTY)0) {                   /* CASE 0: Insert when there are no entries     */
         p_pend_list->NbrEntries = (OS_OBJ_QTY)1;                      /*         This is the first entry              */
         p_pend_data->NextPtr    = (OS_PEND_DATA *)0;                  /*         No other OS_PEND_DATAs in the list   */
@@ -1484,7 +1514,11 @@ void  OS_PendListInsertPrio (OS_PEND_LIST  *p_pend_list,
         p_pend_data_next = p_pend_list->HeadPtr;
         while (p_pend_data_next != (OS_PEND_DATA *)0) {               /*         Find the position where to insert    */
             p_tcb_next   = p_pend_data_next->TCBPtr;
+#if EDF_CFG_ENABLED
+            if (prio < EDF_DEADLINE_ABSOLUTE(p_tcb_next)) {
+#else
             if (prio < p_tcb_next->Prio) {
+#endif
                 break;                                                /*         Found! ... insert BEFORE current     */
             } else {
                 p_pend_data_next = p_pend_data_next->NextPtr;         /*         Not Found, follow the list           */

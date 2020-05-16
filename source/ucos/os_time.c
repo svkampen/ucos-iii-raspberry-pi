@@ -32,6 +32,8 @@
 
 #define  MICRIUM_SOURCE
 #include <os.h>
+#include <edf_cfg.h>
+#include <edf_heap.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_time__c = "$Id: $";
@@ -132,7 +134,11 @@ void  OSTimeDly (OS_TICK   dly,
          OS_CRITICAL_EXIT_NO_SCHED();
          return;
     }
+#if EDF_CFG_ENABLED
+    OS_EdfHeapRemove(OSTCBCurPtr);
+#else
     OS_RdyListRemove(OSTCBCurPtr);                          /* Remove current task from ready list                    */
+#endif
     OS_CRITICAL_EXIT_NO_SCHED();
     OSSched();                                              /* Find next task to run!                                 */
    *p_err = OS_ERR_NONE;
@@ -313,7 +319,11 @@ void  OSTimeDlyHMSM (CPU_INT16U   hours,
              OS_CRITICAL_EXIT_NO_SCHED();
              return;
         }
+#if EDF_CFG_ENABLED
+        OS_EdfHeapRemove(OSTCBCurPtr);
+#else
         OS_RdyListRemove(OSTCBCurPtr);                      /* Remove current task from ready list                    */
+#endif
         OS_CRITICAL_EXIT_NO_SCHED();
         OSSched();                                          /* Find next task to run!                                 */
        *p_err = OS_ERR_NONE;
@@ -531,7 +541,6 @@ void  OSTimeTick (void)
 #if OS_CFG_ISR_POST_DEFERRED_EN > 0u
     CPU_TS  ts;
 #endif
-
 
     OSTimeTickHook();                                       /* Call user definable hook                               */
 
