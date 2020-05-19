@@ -974,7 +974,7 @@ struct os_tcb {
 #else
     OS_TICK              EDFPeriod;                         /* Period, in timer ticks */
     CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
-    CPU_TS64             EDFLastActivationTime;             /* Last TS when the task was activated */
+    CPU_TS64             EDFCurrentActivationTime;          /* TS when the task was last activated */
     CPU_TS64             EDFWorstCaseExecutionTime;         /* WCET */
     CPU_INT32U           EDFHeapIndex;                      /* Index of this TCB into the EDF heap. */
 #endif

@@ -167,7 +167,7 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
     p_tcb->EDFPeriod             = period;
     p_tcb->EDFRelativeDeadline   = relative_deadline;
     p_tcb->EDFWorstCaseExecutionTime = wcet;
-    p_tcb->EDFLastActivationTime = 0;
+    p_tcb->EDFCurrentActivationTime = 0;
 
 #if OS_CFG_TASK_REG_TBL_SIZE > 0u
     for (reg_nbr = 0u; reg_nbr < OS_CFG_TASK_REG_TBL_SIZE; reg_nbr++)
@@ -223,7 +223,7 @@ void OSFinishInstance()
     OS_CRITICAL_ENTER();
 
     CPU_TS time  = CPU_TS_TmrRd();
-    CPU_TS delta = time - p_tcb->EDFLastActivationTime;
+    CPU_TS delta = time - p_tcb->EDFCurrentActivationTime;
     /* timer resolution = 1 μs, and 1 s = 1e6 μs */
     /* FIXME might be off by at most one tick? but should sync as tasks activate
      * periodically since the activation time will be at a tick */
@@ -233,7 +233,7 @@ void OSFinishInstance()
 
     OS_TaskBlock(p_tcb, ticks_left);
 
-    p_tcb->EDFLastActivationTime += (TICKS_TO_USEC(p_tcb->EDFPeriod));
+    p_tcb->EDFCurrentActivationTime += (TICKS_TO_USEC(p_tcb->EDFPeriod));
 
     OS_CRITICAL_EXIT_NO_SCHED();
 
