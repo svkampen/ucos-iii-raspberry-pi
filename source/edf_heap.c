@@ -182,6 +182,29 @@ void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
     OS_CRITICAL_EXIT();
 }
 
+void OS_EdfHeapCheckHelper(uint32_t idx)
+{
+    uint32_t left_idx = 2 * idx + 1;
+    uint32_t right_idx = left_idx + 1;
+
+    ASSERT(OSEdfHeap[idx]->EDFHeapIndex == idx);
+    if (left_idx < OSEdfHeapSize)
+    {
+        ASSERT(EDF_DEADLINE_ABSOLUTE(OSEdfHeap[left_idx]) >= EDF_DEADLINE_ABSOLUTE(OSEdfHeap[idx]));
+        OS_EdfHeapCheckHelper(left_idx);
+    }
+    if (right_idx < OSEdfHeapSize)
+    {
+        ASSERT(EDF_DEADLINE_ABSOLUTE(OSEdfHeap[right_idx]) >= EDF_DEADLINE_ABSOLUTE(OSEdfHeap[idx]));
+        OS_EdfHeapCheckHelper(right_idx);
+    }
+}
+
+void OS_EdfHeapCheck()
+{
+    OS_EdfHeapCheckHelper(0);
+}
+
 void OS_EdfHeapRemove(OS_TCB* p_tcb)
 {
     // for efficiency we should probably keep a reverse mapping.
