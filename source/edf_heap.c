@@ -33,7 +33,7 @@ void OS_EdfResetActivationTimes()
 void OS_EdfHeapSiftUp(int index)
 {
     int   compare_result, parent_idx;
-    void* tmp;
+    OS_TCB* tmp;
 
     if (index == 0) return;
 
@@ -45,6 +45,9 @@ void OS_EdfHeapSiftUp(int index)
         tmp              = OSEdfHeap[index];
         OSEdfHeap[index]      = OSEdfHeap[parent_idx];
         OSEdfHeap[parent_idx] = tmp;
+
+        tmp->EDFHeapIndex = parent_idx;
+        OSEdfHeap[index]->EDFHeapIndex = index;
 
         index = parent_idx;
 
@@ -74,7 +77,7 @@ void OS_EdfPrintHeap()
 void OS_EdfHeapSiftDown(int index)
 {
     uint32_t left_index, right_index;
-    void *element, *left_element, *right_element;
+    OS_TCB *element, *left_element, *right_element;
     int l_or_r_swap;
 
     while (DEF_ON)
@@ -111,13 +114,17 @@ void OS_EdfHeapSiftDown(int index)
             if (l_or_r_swap < 0)
             {
                 OSEdfHeap[left_index] = element;
+                element->EDFHeapIndex = left_index;
                 OSEdfHeap[index]      = left_element;
+                left_element->EDFHeapIndex = index;
                 index            = left_index;
             }
             else
             {
                 OSEdfHeap[right_index] = element;
+                element->EDFHeapIndex = right_index;
                 OSEdfHeap[index]       = right_element;
+                right_element->EDFHeapIndex = index;
                 index             = right_index;
             }
         }
@@ -144,17 +151,8 @@ void OS_EdfHeapSift(OS_TCB* p_tcb)
 {
     CPU_SR_ALLOC();
     OS_CRITICAL_ENTER();
-    int idx = -1;
-    for (unsigned i = 0; i < OSEdfHeapSize; ++i)
-    {
-        if (OSEdfHeap[i] == p_tcb)
-        {
-            idx = i;
-            break;
-        }
-    }
 
-    ASSERT(idx >= 0); 
+    uint32_t idx = p_tcb->EDFHeapIndex;
 
     int parent_idx = (idx - 1) / 2;
     /* Sift down if greater than or equal to parent, up otherwise. */
@@ -177,6 +175,7 @@ void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
     CPU_SR_ALLOC();
     OS_CRITICAL_ENTER();
     OSEdfHeap[OSEdfHeapSize++] = p_tcb;
+    p_tcb->EDFHeapIndex = OSEdfHeapSize - 1;
     *p_err = OS_ERR_NONE;
 
     OS_EdfHeapSiftUp(OSEdfHeapSize - 1);
@@ -190,20 +189,11 @@ void OS_EdfHeapRemove(OS_TCB* p_tcb)
     CPU_SR_ALLOC();
 
     OS_CRITICAL_ENTER();
-    int idx = -1;
-    for (unsigned i = 0; i < OSEdfHeapSize; ++i)
-    {
-        if (OSEdfHeap[i] == p_tcb)
-        {
-            idx = i;
-            break;
-        }
-    }
-
-    ASSERT(idx >= 0);
+    uint32_t idx = p_tcb->EDFHeapIndex;
 
     OS_TCB* last_task = OSEdfHeap[--OSEdfHeapSize];
     OSEdfHeap[idx] = last_task;
+    last_task->EDFHeapIndex = idx;
     int parent_idx = (idx - 1) / 2;
     /* Sift down if greater than or equal to parent, up otherwise. */
     if (OS_EdfHeapCompare(last_task, OSEdfHeap[parent_idx]) >= 0)

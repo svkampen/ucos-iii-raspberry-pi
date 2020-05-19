@@ -976,6 +976,7 @@ struct os_tcb {
     CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
     CPU_TS64             EDFLastActivationTime;             /* Last TS when the task was activated */
     CPU_TS64             EDFWorstCaseExecutionTime;         /* WCET */
+    CPU_INT32U           EDFHeapIndex;                      /* Index of this TCB into the EDF heap. */
 #endif
     CPU_STK_SIZE         StkSize;                           /* Size of task stack (in number of stack elements)       */
     OS_OPT               Opt;                               /* Task options as passed by OSTaskCreate()               */
