@@ -1,4 +1,5 @@
 build
+tags
 copy_kernel
 *.img
 *.list
