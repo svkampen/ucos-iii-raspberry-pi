@@ -11,8 +11,8 @@ loader_OBJECTS=build/uart.o build/loader.o build/printf.o build/gpio.o build/loa
 OBJECTS=$(kernel_OBJECTS) $(loader_OBJECTS)
 
 INCLUDEFLAGS := $(shell find -L include/ -type d | sed 's/^/-I/' | xargs echo)
-CPUFLAGS=-mcpu=arm1176jzf-s
-CFLAGS=-fno-strict-aliasing -ffreestanding -Os $(CPUFLAGS) -static -nostartfiles -nostdlib -marm -MMD $(INCLUDEFLAGS) -Wall -Wextra
+CPUFLAGS=-mcpu=arm1176jzf-s -mfpu=vfp
+CFLAGS=-fno-strict-aliasing -ffreestanding -O2 $(CPUFLAGS) -static -nostartfiles -nostdlib -marm -MMD $(INCLUDEFLAGS) -Wall -Wextra
 ASFLAGS=$(CPUFLAGS) $(INCLUDEFLAGS)
 
 .PHONY: clean all

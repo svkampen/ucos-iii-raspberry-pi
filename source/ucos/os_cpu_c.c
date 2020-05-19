@@ -286,6 +286,11 @@ CPU_STK  *OSTaskStkInit (OS_TASK_PTR    p_task,
     *--p_stk  = (CPU_STK)0x02020202u;                       /* R2                                                */
     *--p_stk  = (CPU_STK)0x01010101u;                       /* R1                                                */
     *--p_stk  = (CPU_STK)p_arg;                             /* R0 : argument                                     */
+
+    // FPU initialize to 0
+    for (int i = 0; i < 32; ++i)
+        *--p_stk = (CPU_STK)0;
+
     *--p_stk  = (CPU_STK)OS_TaskReturn;                     /* R14 (LR)                                          */
     *--p_stk  = 0;                                          /* Stack alignment difference (zero, see assertion)  */
 

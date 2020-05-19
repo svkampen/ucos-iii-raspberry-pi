@@ -13,15 +13,7 @@
     and r1, sp, #4
     sub sp, sp, r1
     push {r1, lr}
-.endm
-
-.macro OS_SWI_CTX_SAVE
-    srsfd sp!,#ARM_MODE_SVC
-    push {r0-r12}
-
-    and r1, sp, #4
-    sub sp, sp, r1
-    push {r1, lr}
+    vpush {d0-d15}
 .endm
 
 .macro OS_CTX_SAVE
@@ -35,10 +27,11 @@
     and r1, sp, #4 // r1 contains 'delta' between 8-byte-aligned stack and interrupted stack
     sub sp, sp, r1
     push {r1, lr} // make sure we store 8 bytes >.>
-
+    vpush {d0-d15}
 .endm
 
 .macro OS_CTX_RESTORE
+    vpop {d0-d15} // au. 4*32=128 bytes aan stackruimte...
     pop {r1, lr}
     add sp, sp, r1 // Restore stack alignment
 
