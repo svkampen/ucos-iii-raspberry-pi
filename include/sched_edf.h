@@ -1,4 +1,5 @@
 #pragma once
+#include <edf_heap.h>
 
 void OSFinishInstance();
 #define OS_EDF_FINISH_INSTANCE_NO_BLOCK do { OSTCBCurPtr->EDFLastActivationTime += (TICKS_TO_USEC(OSTCBCurPtr->EDFPeriod)); OS_EdfHeapSift(OSTCBCurPtr); } while(0)
