@@ -8,3 +8,4 @@ void OS_EdfHeapRemove(OS_TCB*);
 OS_TCB* OS_EdfHeapPeek();
 void OS_EdfPrintHeap();
 void OS_EdfHeapSift();
+void OS_EdfResetActivationTimes();

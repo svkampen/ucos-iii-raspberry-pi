@@ -35,6 +35,7 @@
 #include <uart.h>
 #include <edf_cfg.h>
 #include <edf_heap.h>
+#include <sched_edf.h>
 #include <runtime_assert.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
@@ -725,6 +726,7 @@ void  OSStart (OS_ERR  *p_err)
 #endif
 
     if (OSRunning == OS_STATE_OS_STOPPED) {
+        OS_EdfResetActivationTimes();
 #if !(EDF_CFG_ENABLED)
         OSPrioHighRdy   = OS_PrioGetHighest();              /* Find the highest priority                              */
         OSPrioCur       = OSPrioHighRdy;

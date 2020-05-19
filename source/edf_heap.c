@@ -22,6 +22,14 @@ void print_task_name_deadline(int idx, OS_TCB* task)
     printf("%d %s P %lu RD %llx LAT %llx", idx, task->NamePtr, task->EDFPeriod, task->EDFRelativeDeadline, task->EDFLastActivationTime);
 }
 
+void OS_EdfResetActivationTimes()
+{
+    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
+    {
+        OSEdfHeap[i]->EDFLastActivationTime = CPU_TS_TmrRd();
+    }
+}
+
 void OS_EdfHeapSiftUp(int index)
 {
     int   compare_result, parent_idx;
