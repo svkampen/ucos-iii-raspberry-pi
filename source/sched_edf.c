@@ -94,7 +94,7 @@ void OS_TaskRdy(OS_TCB* p_tcb)
     }
 }
 
-uint64_t get_task_time_usage(OS_TCB* i, uint64_t t_1, uint64_t t_2)
+inline uint64_t get_task_time_usage(OS_TCB* i, uint64_t t_1, uint64_t t_2)
 {
     uint32_t num_instances = (t_2 + i->EDFPeriod - i->EDFRelativeDeadline) / i->EDFPeriod;
     return num_instances * i->EDFWorstCaseExecutionTime;
@@ -108,6 +108,35 @@ uint64_t get_task_set_demand(uint64_t t_1, uint64_t t_2)
         sum += get_task_time_usage(OSEdfHeap[i], t_1, t_2);
     }
     return sum;
+}
+
+inline double task_utilization(OS_TCB* task)
+{
+    return task->EDFWorstCaseExecutionTime / (double)TICKS_TO_USEC(task->EDFPeriod);
+}
+
+double processor_utilization()
+{
+    double U = 0;
+    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
+    {
+        U += task_utilization(OSEdfHeap[i]);
+    }
+    return U;
+}
+
+bool edf_guarantee()
+{
+    double L_star = 0;
+    double U = processor_utilization();
+    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
+    {
+        OS_TCB* task = OSEdfHeap[i];
+        L_star += (TICKS_TO_USEC(task->EDFPeriod) - task->EDFRelativeDeadline) * task_utilization(task);
+    }
+    L_star /= (1 - U);
+
+
 }
 
 void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
