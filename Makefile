@@ -34,7 +34,7 @@ build/%.o : $$(if $$(findstring loader,$$@),loader,source)/%.c | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/%.o : $$(if $$(findstring loader,$$@),loader,source)/%.s | build
-	$(AS) $(ASFLAGS) $< -o $@
+	$(AS) $(ASFLAGS) --MD ${@:.o=.d} $< -o $@
 
 -include $(OBJECTS:.o=.d)
 
