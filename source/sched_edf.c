@@ -94,6 +94,22 @@ void OS_TaskRdy(OS_TCB* p_tcb)
     }
 }
 
+uint64_t get_task_time_usage(OS_TCB* i, uint64_t t_1, uint64_t t_2)
+{
+    uint32_t num_instances = (t_2 + i->EDFPeriod - i->EDFRelativeDeadline) / i->EDFPeriod;
+    return num_instances * i->EDFWorstCaseExecutionTime;
+}
+
+uint64_t get_task_set_demand(uint64_t t_1, uint64_t t_2)
+{
+    uint64_t sum = 0;
+    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
+    {
+        sum += get_task_time_usage(OSEdfHeap[i], t_1, t_2);
+    }
+    return sum;
+}
+
 void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
                   void* p_arg, CPU_STK* p_stk_base, CPU_STK_SIZE stk_limit,
                   CPU_STK_SIZE stk_size, OS_MSG_QTY q_size, OS_TICK period,
