@@ -36,9 +36,9 @@ void uart_init()
 
     __dmb();
 
-    /* Set baud rate divisor to 1.6... (115200 b/s) */
-    *uart_ibrd = 1;
-    *uart_fbrd = 40;
+    /* Set baud rate divisor to 3.255... (921,600 b/s) */
+    *uart_ibrd = 3;
+    *uart_fbrd = 16;
 
     /* 8 bit mode, no parity, no break, enable fifos (buffering) */
     *uart_lcrh = (UART_LCRH_8BIT | UART_LCRH_FIFO | UART_LCRH_STP2);

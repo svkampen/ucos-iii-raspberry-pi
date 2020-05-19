@@ -1,2 +1,2 @@
 #!/bin/bash
-picocom --stopbits 2 -b 115200 --send-cmd "python3 send.py" /dev/ttyUSB0
+picocom --stopbits 2 -b 921600 --send-cmd "python3 send.py" /dev/ttyUSB0
