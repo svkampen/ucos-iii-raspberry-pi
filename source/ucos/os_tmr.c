@@ -32,6 +32,7 @@
 
 #define  MICRIUM_SOURCE
 #include <os.h>
+#include <sched_edf.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_tmr__c = "$Id: $";
@@ -1059,6 +1060,13 @@ void  OS_TmrTask (void  *p_arg)
 
 
     p_arg = p_arg;                                               /* Not using 'p_arg', prevent compiler warning       */
+
+#if EDF_CFG_ENABLED
+    /* Effectively set the next deadline to now + 2 ticks */
+    OS_EDF_RESET_ACTIVATION_TIME;
+    OS_EDF_FINISH_INSTANCE_NO_BLOCK;
+#endif
+
     while (DEF_ON) {
         (void)OSTaskSemPend((OS_TICK )0,                         /* Wait for signal indicating time to update tmrs    */
                             (OS_OPT  )OS_OPT_PEND_BLOCKING,
@@ -1102,6 +1110,9 @@ void  OS_TmrTask (void  *p_arg)
         if (OSTmrTaskTimeMax < ts_end) {
             OSTmrTaskTimeMax = ts_end;
         }
+#if EDF_CFG_ENABLED
+        OS_EDF_FINISH_INSTANCE_NO_BLOCK;
+#endif
     }
 }
 
