@@ -853,7 +853,7 @@ void  OS_IdleTaskInit (OS_ERR  *p_err)
                  (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS),
                  (OS_ERR     *)p_err);
 #else
-    OSTaskCreate(&OSIdleTaskTCB, "uC/OS-III Idle Task", OS_IdleTask, 0, OSCfg_IdleTaskStkBasePtr, OSCfg_IdleTaskStkLimit, OSCfg_IdleTaskStkSize, 0, UINT16_MAX, UINT32_MAX, 0, OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS, p_err);
+    OSTaskCreate(&OSIdleTaskTCB, "uC/OS-III Idle Task", OS_IdleTask, 0, OSCfg_IdleTaskStkBasePtr, OSCfg_IdleTaskStkLimit, OSCfg_IdleTaskStkSize, 0, UINT16_MAX, UINT32_MAX, MSECS_TO_USECS(1), 0, OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS, p_err);
 #endif
 }
 

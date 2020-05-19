@@ -860,7 +860,7 @@ void  OS_TmrInit (OS_ERR  *p_err)
                  (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS),
                  (OS_ERR     *)p_err);
 #else
-    OSTaskCreate(&OSTmrTaskTCB, "uC/OS-III Timer Task", OS_TmrTask, 0, OSCfg_TmrTaskStkBasePtr, OSCfg_TmrTaskStkLimit, OSCfg_TmrTaskStkSize, 0, 1, 24000000, 0, 0, p_err);
+    OSTaskCreate(&OSTmrTaskTCB, "uC/OS-III Timer Task", OS_TmrTask, 0, OSCfg_TmrTaskStkBasePtr, OSCfg_TmrTaskStkLimit, OSCfg_TmrTaskStkSize, 0, 1, TICKS_TO_USEC(1), MSECS_TO_USECS(1), 0, 0, p_err);
 #endif
 }
 

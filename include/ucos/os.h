@@ -975,6 +975,7 @@ struct os_tcb {
     OS_TICK              EDFPeriod;                         /* Period, in timer ticks */
     CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
     CPU_TS64             EDFLastActivationTime;             /* Last TS when the task was activated */
+    CPU_TS64             EDFWorstCaseExecutionTime;         /* WCET */
 #endif
     CPU_STK_SIZE         StkSize;                           /* Size of task stack (in number of stack elements)       */
     OS_OPT               Opt;                               /* Task options as passed by OSTaskCreate()               */
@@ -1673,8 +1674,8 @@ void          OSTaskCreate              (OS_TCB                *p_tcb,
 void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
                   void* p_arg, CPU_STK* p_stk_base, CPU_STK_SIZE stk_limit,
                   CPU_STK_SIZE stk_size, OS_MSG_QTY q_size, OS_TICK period,
-                  CPU_TS64 relative_deadline, void* p_ext, OS_OPT opt,
-                  OS_ERR* err);
+                  CPU_TS64 relative_deadline, CPU_TS64 wcet, void* p_ext,
+                  OS_OPT opt, OS_ERR* err);
 #endif
 
 #if OS_CFG_TASK_DEL_EN > 0u

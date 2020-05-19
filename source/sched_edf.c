@@ -97,8 +97,8 @@ void OS_TaskRdy(OS_TCB* p_tcb)
 void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
                   void* p_arg, CPU_STK* p_stk_base, CPU_STK_SIZE stk_limit,
                   CPU_STK_SIZE stk_size, OS_MSG_QTY q_size, OS_TICK period,
-                  CPU_TS64 relative_deadline, void* p_ext, OS_OPT opt,
-                  OS_ERR* err)
+                  CPU_TS64 relative_deadline, CPU_TS64 wcet, void* p_ext,
+                  OS_OPT opt, OS_ERR* err)
 {
     CPU_STK_SIZE i;
     CPU_STK*     p_sp;
@@ -150,7 +150,8 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
 
     p_tcb->EDFPeriod             = period;
     p_tcb->EDFRelativeDeadline   = relative_deadline;
-    p_tcb->EDFLastActivationTime = CPU_TS_TmrRd();
+    p_tcb->EDFWorstCaseExecutionTime = wcet;
+    p_tcb->EDFLastActivationTime = 0;
 
 #if OS_CFG_TASK_REG_TBL_SIZE > 0u
     for (reg_nbr = 0u; reg_nbr < OS_CFG_TASK_REG_TBL_SIZE; reg_nbr++)
