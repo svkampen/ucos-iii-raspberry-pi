@@ -12,7 +12,7 @@ OBJECTS=$(kernel_OBJECTS) $(loader_OBJECTS)
 
 INCLUDEFLAGS := $(shell find -L include/ -type d | sed 's/^/-I/' | xargs echo)
 CPUFLAGS=-mcpu=arm1176jzf-s -mfpu=vfp
-CFLAGS=-ffreestanding -O2 $(CPUFLAGS) -static -nostartfiles -nostdlib -marm -MMD $(INCLUDEFLAGS) -Wall -Wextra
+CFLAGS=-ffreestanding -O2 $(CPUFLAGS) -static -nostdlib -marm -MMD $(INCLUDEFLAGS) -Wall -Wextra -Woverflow
 ASFLAGS=$(CPUFLAGS) $(INCLUDEFLAGS)
 
 .PHONY: clean all
