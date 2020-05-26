@@ -33,6 +33,7 @@
 #define  MICRIUM_SOURCE
 #include <os.h>
 #include <sched_edf.h>
+#include <printf.h>
 
 #ifdef VSC_INCLUDE_SOURCE_FILE_NAMES
 const  CPU_CHAR  *os_tmr__c = "$Id: $";
@@ -860,7 +861,8 @@ void  OS_TmrInit (OS_ERR  *p_err)
                  (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS),
                  (OS_ERR     *)p_err);
 #else
-    OSTaskCreate(&OSTmrTaskTCB, "uC/OS-III Timer Task", OS_TmrTask, 0, OSCfg_TmrTaskStkBasePtr, OSCfg_TmrTaskStkLimit, OSCfg_TmrTaskStkSize, 0, 1, TICKS_TO_USEC(1), MSECS_TO_USECS(1), 0, 0, p_err);
+    uint32_t ticks = OSCfg_TickRate_Hz / OSCfg_TmrTaskRate_Hz;
+    OSTaskCreate(&OSTmrTaskTCB, "uC/OS-III Timer Task", OS_TmrTask, 0, OSCfg_TmrTaskStkBasePtr, OSCfg_TmrTaskStkLimit, OSCfg_TmrTaskStkSize, 0, ticks, TICKS_TO_USEC(ticks), MSECS_TO_USECS(10), 0, 0, p_err);
 #endif
 }
 

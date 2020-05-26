@@ -29,10 +29,18 @@ void OSSched(void)
         return;
     }
 
+#if EDF_CFG_DEBUG
     printf("OSSched: switching to %s\n", OSTCBHighRdyPtr->NamePtr);
+#endif
 
 #if EDF_CFG_CHECK_DEADLINE_MISS > 0u
-    WARN_IF_NOT_OP(EDF_DEADLINE_ABSOLUTE(OSTCBHighRdyPtr), >=, CPU_TS_TmrRd());
+    uint64_t absolute_deadline = EDF_DEADLINE_ABSOLUTE(OSTCBHighRdyPtr);
+    uint64_t time = CPU_TS_TmrRd();
+    if (absolute_deadline < time)
+    {
+        printf("Warning: deadline for task `%s' missed: %llu < %llu\n",
+               OSTCBHighRdyPtr->NamePtr, absolute_deadline, time);
+    }
 #endif
 
     OSTaskCtxSwCtr++;
@@ -68,7 +76,9 @@ void OSIntExit(void)
 void OS_TaskBlock(OS_TCB* p_tcb, OS_TICK timeout)
 {
     OS_ERR err;
+#if EDF_CFG_DEBUG
     printf("OS_TaskBlock: %s\n", p_tcb->NamePtr);
+#endif
     if (timeout > (OS_TICK)0)
     {
         OS_TickListInsert(p_tcb, timeout, OS_OPT_TIME_TIMEOUT, &err);
@@ -85,7 +95,9 @@ void OS_TaskBlock(OS_TCB* p_tcb, OS_TICK timeout)
 void OS_TaskRdy(OS_TCB* p_tcb)
 {
     OS_ERR err;
+#if EDF_CFG_DEBUG
     printf("OS_TaskRdy: %s\n", p_tcb->NamePtr);
+#endif
     OS_TickListRemove(p_tcb);
     if ((p_tcb->TaskState & OS_TASK_STATE_BIT_SUSPENDED) == (OS_STATE)0)
     {
@@ -96,6 +108,7 @@ void OS_TaskRdy(OS_TCB* p_tcb)
 
 inline uint64_t get_task_time_usage(OS_TCB* i, uint64_t t_1, uint64_t t_2)
 {
+    ASSERT(t_1 == 0);
     uint32_t num_instances = (t_2 + i->EDFPeriod - i->EDFRelativeDeadline) / i->EDFPeriod;
     return num_instances * i->EDFWorstCaseExecutionTime;
 }
@@ -103,7 +116,7 @@ inline uint64_t get_task_time_usage(OS_TCB* i, uint64_t t_1, uint64_t t_2)
 uint64_t get_task_set_demand(uint64_t t_1, uint64_t t_2)
 {
     uint64_t sum = 0;
-    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
+    for (int32_t i = 0; i < OSEdfHeapSize; ++i)
     {
         sum += get_task_time_usage(OSEdfHeap[i], t_1, t_2);
     }
@@ -118,25 +131,59 @@ inline double task_utilization(OS_TCB* task)
 double processor_utilization()
 {
     double U = 0;
-    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
-    {
-        U += task_utilization(OSEdfHeap[i]);
-    }
+    OS_EDF_HEAP_FOREACH({
+        U += task_utilization(task);
+    });
     return U;
+}
+
+uint64_t gcd(uint64_t m, uint64_t n)
+{
+    return (m == 0) ? n : (n == 0) ? m : gcd(n, m % n);
+}
+
+uint64_t lcm(uint64_t m, uint64_t n)
+{
+    return (m != 0 && n != 0) ? (m / gcd(m, n)) * n : 0;
+}
+
+inline uint64_t max(uint64_t m, uint64_t n)
+{
+    return (m > n) ? m : n;
+}
+
+inline uint64_t min(uint64_t m, uint64_t n)
+{
+    return (m < n) ? m : n;
 }
 
 bool edf_guarantee()
 {
     double L_star = 0;
+    CPU_TS64 D_max = 0;
+    CPU_TS64 hyperperiod = 0;
     double U = processor_utilization();
-    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
-    {
-        OS_TCB* task = OSEdfHeap[i];
+
+    OS_EDF_HEAP_FOREACH({
         L_star += (TICKS_TO_USEC(task->EDFPeriod) - task->EDFRelativeDeadline) * task_utilization(task);
-    }
+        hyperperiod = lcm(hyperperiod, TICKS_TO_USEC(task->EDFPeriod));
+        D_max = max(D_max, task->EDFRelativeDeadline);
+    });
+
     L_star /= (1 - U);
 
+    CPU_TS64 max_check = min(hyperperiod, max(D_max, L_star));
 
+    OS_EDF_HEAP_FOREACH({
+        uint64_t d_k = 0;
+        while ((d_k += TICKS_TO_USEC(task->EDFPeriod)) < max_check)
+        {
+            WARN_IF_NOT_OP(get_task_set_demand(0, d_k), <=, d_k)
+            if (get_task_set_demand(0, d_k) > d_k)
+                return false;
+        }
+    });
+    return true;
 }
 
 void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
@@ -151,6 +198,10 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
     OS_REG_ID    reg_nbr;
 
     CPU_SR_ALLOC();
+
+#if EDF_CFG_DEBUG
+    printf("OSTaskCreate %s\n", p_name);
+#endif
 
     OS_TaskInitTCB(p_tcb);
 
@@ -197,6 +248,18 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
     p_tcb->EDFRelativeDeadline   = relative_deadline;
     p_tcb->EDFWorstCaseExecutionTime = wcet;
     p_tcb->EDFCurrentActivationTime = 0;
+    p_tcb->EDFHeapIndex = -1;
+
+    OS_CRITICAL_ENTER();
+    OS_EdfHeapInsert(p_tcb, err);
+    if (!edf_guarantee())
+    {
+        OS_EdfHeapRemove(p_tcb);
+        *err = OS_ERR_EDF_GUARANTEE_FAILED;
+        OS_CRITICAL_EXIT();
+    }
+    OS_EdfHeapRemove(p_tcb);
+    OS_CRITICAL_EXIT();
 
 #if OS_CFG_TASK_REG_TBL_SIZE > 0u
     for (reg_nbr = 0u; reg_nbr < OS_CFG_TASK_REG_TBL_SIZE; reg_nbr++)
@@ -224,7 +287,7 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
     /* --------------- ADD TASK TO READY LIST --------------- */
     OS_CRITICAL_ENTER();
 
-    OS_TaskRdy(p_tcb);
+    OS_EdfHeapInsert(p_tcb, err);
 
 #if OS_CFG_DBG_EN > 0u
     OS_TaskDbgListAdd(p_tcb);
@@ -248,17 +311,22 @@ void OSFinishInstance()
     OS_TCB* p_tcb = OSTCBCurPtr;
 
     CPU_SR_ALLOC();
-
     OS_CRITICAL_ENTER();
 
-    CPU_TS time  = CPU_TS_TmrRd();
-    CPU_TS delta = time - p_tcb->EDFCurrentActivationTime;
+    CPU_TS64 time  = CPU_TS_TmrRd();
+    CPU_TS64 delta = time - p_tcb->EDFCurrentActivationTime;
     /* timer resolution = 1 μs, and 1 s = 1e6 μs */
     /* FIXME might be off by at most one tick? but should sync as tasks activate
      * periodically since the activation time will be at a tick */
     OS_TICK    elapsed_ticks = (delta * OSCfg_TickRate_Hz) / 1000000;
     CPU_INT32S ticks_left    = p_tcb->EDFPeriod - elapsed_ticks;
-    ASSERT(ticks_left > 0);
+    if (ticks_left <= 0)
+    {
+        printf("`%s': %llu\n", p_tcb->NamePtr, delta);
+    }
+    WARN_IF_NOT(ticks_left > 0);
+
+    ticks_left = (ticks_left <= 0) ? 1 : ticks_left;
 
     OS_TaskBlock(p_tcb, ticks_left);
 

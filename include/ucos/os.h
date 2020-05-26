@@ -434,6 +434,8 @@ typedef  enum  os_err {
     OS_ERR_DEL_ISR                   = 13001u,
 
     OS_ERR_E                         = 14000u,
+    OS_ERR_EDF_RDY_QUEUE_FULL        = 14001u,
+    OS_ERR_EDF_GUARANTEE_FAILED      = 14002u,
 
     OS_ERR_F                         = 15000u,
     OS_ERR_FATAL_RETURN              = 15001u,
@@ -526,7 +528,6 @@ typedef  enum  os_err {
     OS_ERR_REG_ID_INVALID            = 27001u,
     OS_ERR_ROUND_ROBIN_1             = 27002u,
     OS_ERR_ROUND_ROBIN_DISABLED      = 27003u,
-    OS_ERR_RDY_QUEUE_FULL            = 27004u,
 
     OS_ERR_S                         = 28000u,
     OS_ERR_SCHED_INVALID_TIME_SLICE  = 28001u,
@@ -976,7 +977,7 @@ struct os_tcb {
     CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
     CPU_TS64             EDFCurrentActivationTime;          /* TS when the task was last activated */
     CPU_TS64             EDFWorstCaseExecutionTime;         /* WCET */
-    CPU_INT32U           EDFHeapIndex;                      /* Index of this TCB into the EDF heap. */
+    CPU_INT32S           EDFHeapIndex;                      /* Index of this TCB into the EDF heap. */
 #endif
     CPU_STK_SIZE         StkSize;                           /* Size of task stack (in number of stack elements)       */
     OS_OPT               Opt;                               /* Task options as passed by OSTaskCreate()               */
@@ -1182,7 +1183,7 @@ OS_EXT            OS_PRIO                   OSPrioSaved;                /* Saved
 extern            CPU_DATA                  OSPrioTbl[OS_PRIO_TBL_SIZE];
 #else
 OS_EXT            OS_TCB*                   OSEdfHeap[EDF_CFG_MAX_TASKS];
-OS_EXT            CPU_INT32U                OSEdfHeapSize;
+OS_EXT            CPU_INT32S                OSEdfHeapSize;
 #endif
 
                                                                         /* QUEUES ----------------------------------- */

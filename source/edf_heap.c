@@ -2,7 +2,6 @@
 #include <includes.h>
 #include <printf.h>
 #include <runtime_assert.h>
-#include <inttypes.h>
 
 #if EDF_CFG_ENABLED
 int OS_EdfHeapCompare(OS_TCB* a, OS_TCB* b)
@@ -14,6 +13,7 @@ int OS_EdfHeapCompare(OS_TCB* a, OS_TCB* b)
 
 OS_TCB* OS_EdfHeapPeek(void)
 {
+    ASSERT(OSEdfHeapSize != 0);
     return OSEdfHeap[0];
 }
 
@@ -24,10 +24,9 @@ void print_task_name_deadline(int idx, OS_TCB* task)
 
 void OS_EdfResetActivationTimes()
 {
-    for (uint32_t i = 0; i < OSEdfHeapSize; ++i)
-    {
-        OSEdfHeap[i]->EDFCurrentActivationTime = CPU_TS_TmrRd();
-    }
+    OS_EDF_HEAP_FOREACH({
+        task->EDFCurrentActivationTime = CPU_TS_TmrRd();
+    });
 }
 
 void OS_EdfHeapSiftUp(int index)
@@ -56,7 +55,7 @@ void OS_EdfHeapSiftUp(int index)
     }
 }
 
-void print_helper(unsigned idx)
+void print_helper(int32_t idx)
 {
     if (idx >= OSEdfHeapSize) return;
     printf("Node ");
@@ -76,9 +75,14 @@ void OS_EdfPrintHeap()
 
 void OS_EdfHeapSiftDown(int index)
 {
-    uint32_t left_index, right_index;
+    int32_t left_index, right_index;
     OS_TCB *element, *left_element, *right_element;
     int l_or_r_swap;
+
+#if EDF_CFG_DEBUG
+    printf("Heap before sift-down: ");
+    OS_EdfPrintHeap();
+#endif
 
     while (DEF_ON)
     {
@@ -136,7 +140,7 @@ void OS_EdfHeapSiftDown(int index)
 void OS_EdfHeapInit(void)
 {
     OSEdfHeapSize = 0;
-    for (unsigned i = 0; i < EDF_CFG_MAX_TASKS; ++i)
+    for (int32_t i = 0; i < EDF_CFG_MAX_TASKS; ++i)
     {
         OSEdfHeap[i] = NULL;
     }
@@ -152,7 +156,7 @@ void OS_EdfHeapSift(OS_TCB* p_tcb)
     CPU_SR_ALLOC();
     OS_CRITICAL_ENTER();
 
-    uint32_t idx = p_tcb->EDFHeapIndex;
+    int32_t idx = p_tcb->EDFHeapIndex;
 
     int parent_idx = (idx - 1) / 2;
     /* Sift down if greater than or equal to parent, up otherwise. */
@@ -168,24 +172,43 @@ void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
 {
     if (OSEdfHeapSize == EDF_CFG_MAX_TASKS)
     {
-        *p_err = OS_ERR_RDY_QUEUE_FULL;
+        *p_err = OS_ERR_EDF_RDY_QUEUE_FULL;
+        return;
+    }
+
+    // already in heap.
+    if (p_tcb->EDFHeapIndex != -1)
+    {
+        printf("Not inserting task at index %ld: `%s' = `%s'\n",
+                p_tcb->EDFHeapIndex, p_tcb->NamePtr, OSEdfHeap[p_tcb->EDFHeapIndex]->NamePtr);
         return;
     }
 
     CPU_SR_ALLOC();
     OS_CRITICAL_ENTER();
+
+#if EDF_CFG_DEBUG
+    printf("EdfHeapInsert `%s'\n", p_tcb->NamePtr);
+#endif
+
     OSEdfHeap[OSEdfHeapSize++] = p_tcb;
     p_tcb->EDFHeapIndex = OSEdfHeapSize - 1;
     *p_err = OS_ERR_NONE;
 
     OS_EdfHeapSiftUp(OSEdfHeapSize - 1);
+
+#if EDF_CFG_DEBUG
+    printf("Heap after insert: ");
+    OS_EdfPrintHeap();
+#endif
     OS_CRITICAL_EXIT();
 }
 
-void OS_EdfHeapCheckHelper(uint32_t idx)
+void OS_EdfHeapCheckHelper(int32_t idx)
 {
-    uint32_t left_idx = 2 * idx + 1;
-    uint32_t right_idx = left_idx + 1;
+    if (!(idx < OSEdfHeapSize)) return;
+    int32_t left_idx = 2 * idx + 1;
+    int32_t right_idx = left_idx + 1;
 
     ASSERT(OSEdfHeap[idx]->EDFHeapIndex == idx);
     if (left_idx < OSEdfHeapSize)
@@ -207,22 +230,44 @@ void OS_EdfHeapCheck()
 
 void OS_EdfHeapRemove(OS_TCB* p_tcb)
 {
-    // for efficiency we should probably keep a reverse mapping.
-    // simple implementation first though.
+    uint32_t lr_addr;
+    __asm__("mov %0,lr" : "=r"(lr_addr));
+
     CPU_SR_ALLOC();
 
     OS_CRITICAL_ENTER();
-    uint32_t idx = p_tcb->EDFHeapIndex;
+#if EDF_CFG_DEBUG
+    printf("OSEdfHeapRemove `%s' called from %08lx; new heap size %ld\n", p_tcb->NamePtr, lr_addr, OSEdfHeapSize - 1);
+#endif
+    int32_t idx = p_tcb->EDFHeapIndex;
+    p_tcb->EDFHeapIndex = -1;
 
     OS_TCB* last_task = OSEdfHeap[--OSEdfHeapSize];
+    OSEdfHeap[OSEdfHeapSize] = NULL;
+    if (last_task == p_tcb) goto end;
     OSEdfHeap[idx] = last_task;
     last_task->EDFHeapIndex = idx;
     int parent_idx = (idx - 1) / 2;
     /* Sift down if greater than or equal to parent, up otherwise. */
     if (OS_EdfHeapCompare(last_task, OSEdfHeap[parent_idx]) >= 0)
+    {
+#if EDF_CFG_DEBUG
+        printf("Sifting down...\n");
+#endif
         OS_EdfHeapSiftDown(idx);
+    }
     else
+    {
+        printf("Sifting up...\n");
         OS_EdfHeapSiftUp(idx);
+    }
+
+end:
+#if EDF_CFG_DEBUG
+    printf("Heap after remove: ");
+    OS_EdfPrintHeap();
+#endif
+    ASSERT(p_tcb->EDFHeapIndex == -1);
 
 #if EDF_CFG_HEAP_CHECK_VALID_EN
     OS_EdfHeapCheck();

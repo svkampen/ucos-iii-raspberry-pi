@@ -8,14 +8,12 @@
 #define ERR(func, err) printf(func " returned error: %08x\n", err);
 
 static OS_TCB  AppRoundRobinTaskTCBs[APP_ROUND_ROBIN_TASKS];
-static CPU_STK AppRoundRobinTaskStks[APP_ROUND_ROBIN_STK_SIZE * APP_ROUND_ROBIN_TASKS];
+static CPU_STK AppRoundRobinTaskStks[APP_ROUND_ROBIN_STK_SIZE * APP_ROUND_ROBIN_TASKS] __attribute__((aligned(8)));
 
 static OS_TCB  AppTaskStartTCB;
-static CPU_STK AppTaskStartStk[APP_TASK_START_STK_SIZE];
+static CPU_STK AppTaskStartStk[APP_TASK_START_STK_SIZE] __attribute__((aligned(8)));
 
-static CPU_INT32U samples;
 static CPU_TS32 timestamp;
-static CPU_INT32U switches;
 
 volatile uint32_t* timer32 = (volatile uint32_t*)0x20003004;
 
@@ -58,7 +56,7 @@ void AppTaskStart(void *p_arg)
     if (err != OS_ERR_NONE)
         ERR("OSSchedRoundRobinCfg", err);
 
-    for (int i = 0; i < APP_ROUND_ROBIN_TASKS; ++i)
+    for (unsigned i = 0; i < APP_ROUND_ROBIN_TASKS; ++i)
     {
         OSTaskCreate(&AppRoundRobinTaskTCBs[i],
                      "Round Robin task",
@@ -83,19 +81,21 @@ void AppTaskStart(void *p_arg)
     printf("Starting measurements...\n");
 
     while (1) {
-        OSTimeDlyHMSM(0, 0, 2, 0, OS_OPT_TIME_HMSM_STRICT, &err);
+        __dmb();
+        OSTimeDlyHMSM(0, 0, 10, 0, OS_OPT_TIME_HMSM_STRICT, &err);
         if (err != OS_ERR_NONE)
         {
             ERR("OSTimeDlyHMSM", err);
         }
-        printf("Starting delta dump: %d deltas\n", ts_idx);
-        for (int i = 0; i < ts_idx; ++i)
+        printf("Starting delta dump: %ld deltas\n", ts_idx);
+        for (unsigned i = 0; i < ts_idx; ++i)
         {
-            printf("%d ", deltas[i]);
+            printf("%ld ", deltas[i]);
         }
         printf("\n");
         timestamp = *timer32;
         ts_idx = 0;
+        __dmb();
     }
 }
 

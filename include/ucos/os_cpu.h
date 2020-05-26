@@ -143,9 +143,6 @@
 *********************************************************************************************************
 */
 
-/* GCC compiles as __arm by default */
-#define __arm
-
 void  OSCtxSw                            (void);
 void  OSIntCtxSw                         (void);
 void  OSStartHighRdy                     (void);

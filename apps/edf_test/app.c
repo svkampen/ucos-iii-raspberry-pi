@@ -3,6 +3,7 @@
 #include <printf.h>
 #include <sched_edf.h>
 #include <uart.h>
+#include <tcm.h>
 
 static OS_TCB  AppTaskStartTCB;
 static CPU_STK AppTaskStartStk[APP_TASK_START_STK_SIZE] __attribute__ ((aligned (8)));
@@ -20,6 +21,8 @@ void AppTaskStart(void* p_arg)
 {
     OS_ERR err = OS_ERR_NONE;
     (void)p_arg;
+
+    printf("AppTaskStart\n");
 
     BSP_Init();
     CPU_Init();
@@ -41,6 +44,7 @@ void main(void)
     __dmb();
 
     uart_init();
+    tcm_init();
     printf("\nStarting EDF test task.\n");
 
     OSInit(&err);
@@ -52,6 +56,8 @@ void main(void)
                  MSECS_TO_USECS(100), 0, 0, &err);
 
     CHECK_ERR("OSTaskCreate");
+
+    printf("Calling OSStart...\n");
 
     OSStart(&err);
     CHECK_ERR("OSStart");

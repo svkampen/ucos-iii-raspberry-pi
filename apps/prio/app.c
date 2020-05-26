@@ -5,7 +5,7 @@
 static OS_TCB  AppTaskTCBs[APP_PRIO_TASKS];
 static CPU_STK AppTaskStks[APP_PRIO_STK_SIZE * APP_PRIO_TASKS];
 
-#define NUM_DELTAS 1024000
+#define NUM_DELTAS 2048000
 static CPU_TS32   timestamp;
 static CPU_TS32   deltas[NUM_DELTAS];
 static uint32_t ts_idx;
@@ -53,7 +53,7 @@ yield:
         if (task_idx == APP_PRIO_TASKS - 1) continue;
         OSTaskSuspend(NULL, &err);
         if (err != OS_ERR_NONE)
-            printf("Task ID %d: ts_idx %d: OSTaskSuspend errored: %d\n", task_idx, ts_idx, err);
+            printf("Task ID %ld: ts_idx %ld: OSTaskSuspend errored: %d\n", task_idx, ts_idx, err);
     } while (DEF_ON);
 }
 
@@ -69,7 +69,7 @@ void AppTaskStart(void* p_arg)
     for (uint32_t i = 0; i < APP_PRIO_TASKS; ++i)
     {
         uint32_t priority = APP_PRIO_BASE_PRIO + (i * APP_PRIO_DELTA_PER_TASK);
-        printf("Creating task %d (priority %d)...\n", i, priority);
+        printf("Creating task %ld (priority %ld)...\n", i, priority);
         OSTaskCreate(&AppTaskTCBs[i], "Prio task", DoNothingTask, (void*)i,
                      priority, &AppTaskStks[i * APP_PRIO_STK_SIZE], 0,
                      APP_PRIO_STK_SIZE, 0, 0, 0, OS_OPT_TASK_NONE, &err);
@@ -83,14 +83,14 @@ void AppTaskStart(void* p_arg)
 
     while (DEF_ON)
     {
-        OSTimeDlyHMSM(0, 0, 5, 0, OS_OPT_TIME_HMSM_STRICT, &err);
+        OSTimeDlyHMSM(0, 0, 10, 0, OS_OPT_TIME_HMSM_STRICT, &err);
         CHECK_ERR("OSTimeDlyHMSM");
 
-        printf("Starting delta dump: %d deltas\n", ts_idx);
+        printf("Starting delta dump: %ld deltas\n", ts_idx);
 
         for (uint32_t i = 0; i < ts_idx; ++i)
         {
-            printf("%d ", deltas[i]);
+            printf("%ld ", deltas[i]);
         }
         printf("\n");
         ts_idx = 0;

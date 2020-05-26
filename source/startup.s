@@ -4,6 +4,7 @@
 .extern int_handle_irq
 .extern OSTCBCurPtr
 .extern OSIntNestingCtr
+.extern printf_
 .include "macros.inc"
 
 .section .init
@@ -30,13 +31,43 @@ _start:
 .endfunc
 
 reset_handler:     .word reset
-undefined_handler: .word hang
+undefined_handler: .word undefined
 swi_handler:       .word swi
-prefetch_handler:  .word hang
-data_handler:      .word hang
+prefetch_handler:  .word prefetch
+data_handler:      .word data
 unused_handler:    .word hang
 irq_handler:       .word irq
 fiq_handler:       .word hang
+
+prefetch_abort_str:
+.asciz "Prefetch Abort\n"
+
+data_abort_str:
+.asciz "Data Abort\n"
+
+undefined_str:
+.asciz "Undefined: %08lx\n"
+
+.balign 4
+
+undefined:
+    ldr r0,=undefined_str
+    mov r1, lr
+    sub r1,r1,#4
+    push {r1}
+    bl printf_
+
+    b hang
+
+data:
+    ldr r0,=data_abort_str
+    bl printf_
+    b hang
+
+prefetch:
+    ldr r0,=prefetch_abort_str
+    bl printf_
+    b hang
 
 .func reset
 reset:
@@ -63,11 +94,17 @@ reset:
     cps #31
     mov sp,#0x4000
 
+    cps #23 // ABT
+    mov sp,#0x10000000 // 256MiB
+
+    cps #27
+    mov sp,#0x9000000 // 128 MiB + 16mb
 
     // SVC mode: stack at 0x8000000 (128 MiB)
     mov r0,#0xD3
     msr cpsr_c,r0
-    mov sp,#0x8000000
+    ldr r0,=#0x8000000
+    mov sp,r0
 
     bl int_disable_irqs
 
@@ -81,7 +118,7 @@ reset:
     orr r0, r0, #0x300000 // allow access to CP10 in privileged and user mode
     orr r0, r0, #0xC00000 // allow access to CP11 in privileged and user mode
     mcr p15, 0, r0, c1, c0, 2
-    // According to the ARM1176-JZF-S technical reference manual, we need to
+    // According to the ARM1176JZF-S technical reference manual, we need to
     // flush the prefetch buffer here (after any writes to the coprocessor
     // access register). Unsurprisingly that's a coprocessor write, too.
     bl __fpb
@@ -90,10 +127,23 @@ reset:
     mov r0,#0x40000000
     fmxr fpexc,r0
 
-    /* allow unaligned accesses. */
+    /* Enable unaligned accesses, icache, and branch prediction. */
+    /* Dcache can only be enabled when the MMU is initialized, and we
+     * are not doing that... */
     mrc p15, 0, r0, c1, c0, 0
     orr r0,r0,#0x400000
+    orr r0,r0,#0x1800
     mcr p15, 0, r0, c1, c0, 0
+    mov r0,#0
+    mcr p15, 0, r0, c7, c5, 0
+    bl __dsb
+    bl __fpb
+
+    // Enable static and dynamic branch prediction, return stack
+    // Disable branch folding.
+    mov r0,#0b111
+    orr r0,r0,#0x20000000
+    mcr p15, 0, r0, c1, c0, 1
 
 // Zero out C BSS
 
@@ -186,6 +236,12 @@ __dmb:
     mcr p15, 0, r0, c7, c10, 5
     bx lr
 .endfunc
+
+.global __dsb
+__dsb:
+    mov r0,#0
+    mcr p15,0,r0,c7,c10,4
+    bx lr
 
 /* Flush Prefetch Buffer. Used after CP15 access register writes, for instance. */
 .global __fpb

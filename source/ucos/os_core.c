@@ -726,12 +726,12 @@ void  OSStart (OS_ERR  *p_err)
 #endif
 
     if (OSRunning == OS_STATE_OS_STOPPED) {
-        OS_EdfResetActivationTimes();
 #if !(EDF_CFG_ENABLED)
         OSPrioHighRdy   = OS_PrioGetHighest();              /* Find the highest priority                              */
         OSPrioCur       = OSPrioHighRdy;
         OSTCBHighRdyPtr = OSRdyList[OSPrioHighRdy].HeadPtr;
 #else
+        OS_EdfResetActivationTimes();
         OSTCBHighRdyPtr = OS_EdfHeapPeek();
 #endif
         OSTCBCurPtr     = OSTCBHighRdyPtr;

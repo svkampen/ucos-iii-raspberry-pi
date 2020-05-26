@@ -157,6 +157,6 @@ void  BSP_Init (void)
     // uart_init(); already initialized early on for debugging
     BSP_LED_Init();
     int_init();
-    timer_init(1000000/OS_CFG_TICK_RATE_HZ); // ticks/sec -> ms/tick
+    timer_init(1000000/OS_CFG_TICK_RATE_HZ); // ticks/sec -> µs/tick
     int_enable_irqs();
 }
