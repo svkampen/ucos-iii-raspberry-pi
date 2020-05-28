@@ -973,7 +973,7 @@ struct os_tcb {
 #if !(EDF_CFG_ENABLED)
     OS_PRIO              Prio;                              /* Task priority (0 == highest)                           */
 #else
-    OS_TICK              EDFPeriod;                         /* Period, in timer ticks */
+    CPU_TS64             EDFPeriod;                         /* Period */
     CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
     CPU_TS64             EDFCurrentActivationTime;          /* TS when the task was last activated */
     CPU_TS64             EDFWorstCaseExecutionTime;         /* WCET */

@@ -19,7 +19,7 @@ OS_TCB* OS_EdfHeapPeek(void)
 
 void print_task_name_deadline(int idx, OS_TCB* task)
 {
-    printf("%d %s P %lu RD %llx LAT %llx", idx, task->NamePtr, task->EDFPeriod, task->EDFRelativeDeadline, task->EDFCurrentActivationTime);
+    printf("%d %s P %llx RD %llx LAT %llx", idx, task->NamePtr, task->EDFPeriod, task->EDFRelativeDeadline, task->EDFCurrentActivationTime);
 }
 
 void OS_EdfResetActivationTimes()

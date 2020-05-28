@@ -1,5 +1,5 @@
+#include <sched_edf.h>
 #include <edf_cfg.h>
-#include <edf_heap.h>
 #include <printf.h>
 #include <runtime_assert.h>
 
@@ -109,7 +109,7 @@ void OS_TaskRdy(OS_TCB* p_tcb)
 inline uint64_t get_task_time_usage(OS_TCB* i, uint64_t t_1, uint64_t t_2)
 {
     ASSERT(t_1 == 0);
-    uint32_t num_instances = (t_2 + i->EDFPeriod - i->EDFRelativeDeadline) / i->EDFPeriod;
+    uint32_t num_instances = (t_2 + (i->EDFPeriod) - i->EDFRelativeDeadline) / (i->EDFPeriod);
     return num_instances * i->EDFWorstCaseExecutionTime;
 }
 
@@ -125,7 +125,7 @@ uint64_t get_task_set_demand(uint64_t t_1, uint64_t t_2)
 
 inline double task_utilization(OS_TCB* task)
 {
-    return task->EDFWorstCaseExecutionTime / (double)TICKS_TO_USEC(task->EDFPeriod);
+    return task->EDFWorstCaseExecutionTime / (double)(task->EDFPeriod);
 }
 
 double processor_utilization()
@@ -165,10 +165,13 @@ bool edf_guarantee()
     double U = processor_utilization();
 
     OS_EDF_HEAP_FOREACH({
-        L_star += (TICKS_TO_USEC(task->EDFPeriod) - task->EDFRelativeDeadline) * task_utilization(task);
-        hyperperiod = lcm(hyperperiod, TICKS_TO_USEC(task->EDFPeriod));
+        L_star += (task->EDFPeriod - task->EDFRelativeDeadline) * task_utilization(task);
+        hyperperiod = lcm(hyperperiod, task->EDFPeriod);
         D_max = max(D_max, task->EDFRelativeDeadline);
     });
+
+    if (U > 1) return false;
+    if (L_star == 0) return true; // U < 1 and period = deadline; 'fast path'
 
     L_star /= (1 - U);
 
@@ -176,7 +179,7 @@ bool edf_guarantee()
 
     OS_EDF_HEAP_FOREACH({
         uint64_t d_k = 0;
-        while ((d_k += TICKS_TO_USEC(task->EDFPeriod)) < max_check)
+        while ((d_k += task->EDFPeriod) < max_check)
         {
             WARN_IF_NOT_OP(get_task_set_demand(0, d_k), <=, d_k)
             if (get_task_set_demand(0, d_k) > d_k)
@@ -244,7 +247,7 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
         stk_size; /* Save the stack size (in number of CPU_STK elements)    */
     p_tcb->Opt = opt; /* Save task options */
 
-    p_tcb->EDFPeriod             = period;
+    p_tcb->EDFPeriod             = TICKS_TO_USEC(period);
     p_tcb->EDFRelativeDeadline   = relative_deadline;
     p_tcb->EDFWorstCaseExecutionTime = wcet;
     p_tcb->EDFCurrentActivationTime = 0;
@@ -319,7 +322,8 @@ void OSFinishInstance()
     /* FIXME might be off by at most one tick? but should sync as tasks activate
      * periodically since the activation time will be at a tick */
     OS_TICK    elapsed_ticks = (delta * OSCfg_TickRate_Hz) / 1000000;
-    CPU_INT32S ticks_left    = p_tcb->EDFPeriod - elapsed_ticks;
+    CPU_INT32S ticks_left    = USECS_TO_TICKS(p_tcb->EDFPeriod) - elapsed_ticks;
+
     if (ticks_left <= 0)
     {
         printf("`%s': %llu\n", p_tcb->NamePtr, delta);
@@ -330,7 +334,7 @@ void OSFinishInstance()
 
     OS_TaskBlock(p_tcb, ticks_left);
 
-    p_tcb->EDFCurrentActivationTime += (TICKS_TO_USEC(p_tcb->EDFPeriod));
+    p_tcb->EDFCurrentActivationTime += p_tcb->EDFPeriod;
 
     OS_CRITICAL_EXIT_NO_SCHED();
 
