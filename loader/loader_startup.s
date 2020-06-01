@@ -36,8 +36,6 @@ irq_handler:       .word irq
 fiq_handler:       .word hang
 
 reset:
-    mov r10,r1
-
     mov r0,#0x8000
     mov r1,#0
 
@@ -71,8 +69,6 @@ zero_loop$:
     strls r2,[r0],#4
     bls zero_loop$
 
-    mov r1, r10
-
 // Copy serial loader high up in memory (to 100MB)
     ldr r0,=__init_end
     ldr r1,=0x6400000
@@ -84,6 +80,7 @@ copy_loop$:
     strls r3,[r1],#4
     bls copy_loop$
 
+    mov r0,r10
     bl main
 
 .global hang

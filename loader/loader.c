@@ -5,12 +5,11 @@
 void int_handle_irq() {};
 uint32_t* OSTCBCurPtr;
 
-void main(void)
+void main()
 {
     __dmb();
 
     uart_init();
-
     printf("Loader started, awaiting length...\n");
 
     uint32_t bytes_to_load = uart_getbyte();
@@ -47,5 +46,6 @@ void main(void)
 
     while (uart_getbyte() != 'l');
 
-    goto *((void*)0x8000); // (gcc extension -> go to 0x8000)
+    __asm__("mov r0,#0x8000\nbx r0");
+    __builtin_unreachable();
 }
