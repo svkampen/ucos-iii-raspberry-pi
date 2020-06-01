@@ -48,7 +48,26 @@ data_abort_str:
 undefined_str:
 .asciz "Undefined: %08lx\n"
 
+hang_str:
+.asciz "Hang called\n"
+
+regs_str:
+.asciz "r0 %08lx  r1 %08lx  r2 %08lx  r3 %08lx
+r4 %08lx  r5 %08lx  r6 %08lx  r7 %08lx
+r8 %08lx  r9 %08lx  r10 %08lx r11 %08lx
+r12 %08lx r13 (sp) %08lx r14 (prev pc) %08lx\n"
+
+
 .balign 4
+
+.macro PRINT_REGS
+    push {r3-r12}
+    mov r3,r2
+    mov r2,r1
+    mov r1,r0
+    ldr r0,=regs_str
+    bl printf_
+.endm
 
 undefined:
     ldr r0,=undefined_str
@@ -57,22 +76,29 @@ undefined:
     push {r1}
     bl printf_
 
-    b hang
+    b hang_
 
 data:
+    sub lr,lr,#8
+    push {lr}
+    mov lr, r0
+    cps #0x13
+    mov r0,r13
+    cps #0x17
+    push {r0}
+    mov r0, lr
+    PRINT_REGS
     ldr r0,=data_abort_str
     bl printf_
-    b hang
+    b hang_
 
 prefetch:
     ldr r0,=prefetch_abort_str
     bl printf_
-    b hang
+    b hang_
 
 .func reset
 reset:
-    mov r10,r1
-
     mov r0,#0x8000
     mov r1,#0
 
@@ -155,14 +181,17 @@ zero_loop$:
     strls r2,[r0],#4
     bls zero_loop$
 
-    mov r1, r10
-
     bl main
 .endfunc
 
 .global hang
 .func hang
-hang: b hang
+hang:
+    cpsid if
+    ldr r0,=hang_str
+    bl printf_
+hang_:
+    b hang_
 .endfunc
 
 .globl GETPC
