@@ -1,0 +1,2 @@
+#include <tasks.h>
+struct task_set task_set = {.hyperperiod = 15300, .num_tasks = 6, .tasks = {{.edf_period = 150, .edf_relative_deadline = 103, .rm_priority = 2, .wcet = 10}, {.edf_period = 150, .edf_relative_deadline = 116, .rm_priority = 3, .wcet = 49}, {.edf_period = 170, .edf_relative_deadline = 118, .rm_priority = 4, .wcet = 15}, {.edf_period = 170, .edf_relative_deadline = 113, .rm_priority = 5, .wcet = 1}, {.edf_period = 180, .edf_relative_deadline = 121, .rm_priority = 6, .wcet = 5}, {.edf_period = 180, .edf_relative_deadline = 120, .rm_priority = 7, .wcet = 2}}};
