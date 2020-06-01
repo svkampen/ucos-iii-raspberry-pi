@@ -7,7 +7,7 @@ LISTS=$(TARGETS:.img=.list)
 MAPS=$(TARGETS:.img=.map)
 
 kernel_OBJECTS := $(shell find -L source/ -iname '*.c' -or -iname '*.s' | sed 's/source/build/;s/\.[cs]$$/.o/' | xargs echo)
-loader_OBJECTS=build/uart.o build/loader.o build/printf.o build/gpio.o build/loader_startup.o
+loader_OBJECTS=build/bsp/uart.o build/loader.o build/printf.o build/bsp/gpio.o build/loader_startup.o
 OBJECTS=$(kernel_OBJECTS) $(loader_OBJECTS)
 
 INCLUDEFLAGS := $(shell find -L include/ -type d | sed 's/^/-I/' | xargs echo)

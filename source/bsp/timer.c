@@ -50,7 +50,7 @@ void timer_init(u32 timedelta)
     __dmb();
 
     u32 current_time = *timerCLO;
-    *timerC1 = current_time + timedelta;
+    *timerC1 = current_time + timedelta - 4;
     *timerCS = 0b0010;
 
     __dmb();
