@@ -6,6 +6,12 @@ import sys
 from task_generate import Task, TaskSet
 import struct
 
+if len(sys.argv) > 1:
+    start_idx = int(sys.argv[1])
+else:
+    start_idx = 0
+
+
 ser = serial.Serial('/dev/ttyUSB0', 921600, stopbits=2)
 
 success_task_sets = []
@@ -17,6 +23,7 @@ total_task_sets = 0
 with open('task_sets.pickle', 'rb') as f:
     task_sets = pickle.load(f)
     total_task_sets = len(task_sets)
+    task_sets = task_sets[start_idx:]
     print(f"Serial controller started, running {len(task_sets)} task sets...")
     current_task_set = task_sets.pop()
 
