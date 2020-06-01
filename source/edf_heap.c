@@ -24,8 +24,9 @@ void print_task_name_deadline(int idx, OS_TCB* task)
 
 void OS_EdfResetActivationTimes()
 {
+    uint64_t tmr = CPU_TS_TmrRd();
     OS_EDF_HEAP_FOREACH({
-        task->EDFCurrentActivationTime = CPU_TS_TmrRd();
+        task->EDFCurrentActivationTime = tmr;
     });
 }
 
@@ -79,6 +80,8 @@ void OS_EdfHeapSiftDown(int index)
     OS_TCB *element, *left_element, *right_element;
     int l_or_r_swap;
 
+    if (index < 0) ASSERT(false);
+
 #if EDF_CFG_DEBUG
     printf("Heap before sift-down: ");
     OS_EdfPrintHeap();
@@ -88,6 +91,8 @@ void OS_EdfHeapSiftDown(int index)
     {
         left_index  = 2 * index + 1;
         right_index = left_index + 1;
+
+        if (left_index < 0 || right_index < 0) ASSERT(false);
 
         element = OSEdfHeap[index];
 
@@ -179,8 +184,10 @@ void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
     // already in heap.
     if (p_tcb->EDFHeapIndex != -1)
     {
+#if EDF_CFG_DEBUG
         printf("Not inserting task at index %ld: `%s' = `%s'\n",
                 p_tcb->EDFHeapIndex, p_tcb->NamePtr, OSEdfHeap[p_tcb->EDFHeapIndex]->NamePtr);
+#endif
         return;
     }
 
@@ -204,7 +211,7 @@ void OS_EdfHeapInsert(OS_TCB* p_tcb, OS_ERR* p_err)
     OS_CRITICAL_EXIT();
 }
 
-void OS_EdfHeapCheckHelper(int32_t idx)
+static void OS_EdfHeapCheckHelper(int32_t idx)
 {
     if (!(idx < OSEdfHeapSize)) return;
     int32_t left_idx = 2 * idx + 1;
@@ -240,6 +247,7 @@ void OS_EdfHeapRemove(OS_TCB* p_tcb)
     printf("OSEdfHeapRemove `%s' called from %08lx; new heap size %ld\n", p_tcb->NamePtr, lr_addr, OSEdfHeapSize - 1);
 #endif
     int32_t idx = p_tcb->EDFHeapIndex;
+    ASSERT(idx != -1);
     p_tcb->EDFHeapIndex = -1;
 
     OS_TCB* last_task = OSEdfHeap[--OSEdfHeapSize];
@@ -258,7 +266,9 @@ void OS_EdfHeapRemove(OS_TCB* p_tcb)
     }
     else
     {
+#if EDF_CFG_DEBUG
         printf("Sifting up...\n");
+#endif
         OS_EdfHeapSiftUp(idx);
     }
 
