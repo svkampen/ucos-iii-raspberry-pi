@@ -4,3 +4,8 @@ copy_kernel
 *.img
 *.list
 *.map
+__pycache__/**
+*.pickle
+.ycm_extra_conf.py
+apps/taskrunner/task_set.c
+
