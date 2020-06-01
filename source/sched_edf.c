@@ -128,7 +128,7 @@ inline double task_utilization(OS_TCB* task)
     return task->EDFWorstCaseExecutionTime / (double)(task->EDFPeriod);
 }
 
-double processor_utilization()
+double OSProcessorUtilization()
 {
     double U = 0;
     OS_EDF_HEAP_FOREACH({
@@ -162,7 +162,13 @@ bool edf_guarantee()
     double L_star = 0;
     CPU_TS64 D_max = 0;
     CPU_TS64 hyperperiod = 0;
-    double U = processor_utilization();
+
+#if EDF_CFG_DEBUG
+    printf("Computing EDF guarantee. OSEdfHeapSize = %ld\n", OSEdfHeapSize);
+#endif
+
+    double U = OSProcessorUtilization();
+
 
     OS_EDF_HEAP_FOREACH({
         L_star += (task->EDFPeriod - task->EDFRelativeDeadline) * task_utilization(task);
@@ -255,11 +261,13 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
 
     OS_CRITICAL_ENTER();
     OS_EdfHeapInsert(p_tcb, err);
+    ASSERT(*err == OS_ERR_NONE);
     if (!edf_guarantee())
     {
         OS_EdfHeapRemove(p_tcb);
         *err = OS_ERR_EDF_GUARANTEE_FAILED;
         OS_CRITICAL_EXIT();
+        return;
     }
     OS_EdfHeapRemove(p_tcb);
     OS_CRITICAL_EXIT();
@@ -318,6 +326,7 @@ void OSFinishInstance()
 
     CPU_TS64 time  = CPU_TS_TmrRd();
     CPU_TS64 delta = time - p_tcb->EDFCurrentActivationTime;
+
     /* timer resolution = 1 μs, and 1 s = 1e6 μs */
     /* FIXME might be off by at most one tick? but should sync as tasks activate
      * periodically since the activation time will be at a tick */
