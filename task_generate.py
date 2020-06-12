@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import code
+from collections import Counter, defaultdict
 from typing import List, Optional
 from math import sqrt
 import random
@@ -76,7 +78,7 @@ class TaskSet:
         if (U > 1): return False
         if (L_star == 0): return True
 
-        print(L_star, D_max, hyperperiod, U, sep=', ')
+        # print(L_star, D_max, hyperperiod, U, sep=', ')
 
         L_star /= (1 - U)
 
@@ -86,7 +88,7 @@ class TaskSet:
             d_k = task.period
             while (d_k < max_check):
                 if self.get_demand(d_k) >= d_k:
-                    print(f"{self.get_demand(d_k)} >= {d_k}")
+                    # print(f"{self.get_demand(d_k)} >= {d_k}")
                     return False
                 d_k += task.period
 
@@ -118,23 +120,45 @@ class TaskSet:
                 period = 10*(period // 10) # attempt to get some tractable hyperperiod
                 wcet = int(period * utilization)
                 if (wcet == 0): continue
-                tasks.append(Task(period, int(period - max(0, (period - wcet)/3)), wcet))
+                tasks.append(Task(period, int(period - (period - wcet)/3), wcet))
                 U += utilization
         return TaskSet(tasks)
 
 
 def generate_tasks():
-    sets = [TaskSet.get_random(16, rng.uniform(0.5, 0.95)) for i in range(10000)]
+    sets = []
+    for i in range(80000):
+        ts = TaskSet.get_random(16, rng.uniform(0.9, 1)*0.95)
+        sets.append(ts)
+        if (i % 1000 == 0):
+            print(i)
     succ_sets = []
     fail_sets = []
 
-    for set in sets:
-        if set.guarantee() and ticks_to_secs(set.get_hyperperiod()) < 120 and len(set.tasks) > 4:
+    for i, set in enumerate(sets):
+        if (i % 1000 == 0):
+            print(i)
+        if ticks_to_secs(set.get_hyperperiod()) < 100 and len(set.tasks) > 4 and set.guarantee():
             succ_sets.append(set)
-        if not set.guarantee() and ticks_to_secs(set.get_hyperperiod()) < 120 and len(set.tasks) > 4:
+        if ticks_to_secs(set.get_hyperperiod()) < 100 and len(set.tasks) > 4 and not set.guarantee():
             fail_sets.append(set)
 
-    with open('task_sets.pickle', 'wb') as f:
+    task_map = defaultdict(list)
+
+    ctr = Counter()
+
+    for set in fail_sets:
+        util = round(100*set.get_utilization())
+        if len(task_map[util]) < 100:
+            task_map[util].append(set)
+        ctr[int(util/1)*1] += 1
+
+    print(ctr)
+
+    fail_sets = sum(task_map.values(), start=[])
+
+    with open('succ_task_sets.pickle', 'wb') as f:
         pickle.dump(succ_sets, f)
 
-    return (succ_sets, fail_sets)
+    with open('fail_task_sets.pickle', 'wb') as f:
+        pickle.dump(fail_sets, f)
