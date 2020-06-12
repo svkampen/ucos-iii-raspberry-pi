@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import serial
 import datetime
 import pickle
@@ -6,11 +7,14 @@ import sys
 from task_generate import Task, TaskSet
 import struct
 
-if len(sys.argv) > 1:
-    start_idx = int(sys.argv[1])
-else:
-    start_idx = 0
+start_idx = 0
+fname = 'succ_task_sets.pickle'
 
+if len(sys.argv) > 1:
+    fname = sys.argv[1]
+    if ':' in fname:
+        fname, start_idx = fname.split(':')
+        start_idx = int(start_idx)
 
 ser = serial.Serial('/dev/ttyUSB0', 921600, stopbits=2)
 
@@ -20,10 +24,11 @@ fail_task_sets    = []
 current_task_set = None
 total_task_sets = 0
 
-with open('task_sets.pickle', 'rb') as f:
+with open(fname, 'rb') as f:
     task_sets = pickle.load(f)
     total_task_sets = len(task_sets)
-    task_sets = task_sets[start_idx:]
+    if (start_idx != 0):
+        task_sets = task_sets[:-start_idx]
     print(f"Serial controller started, running {len(task_sets)} task sets...")
     current_task_set = task_sets.pop()
 
@@ -48,21 +53,34 @@ def send_kernel():
         ser.write(header)
         ser.write(data)
 
+after_kernel_load = False
+RUNNING = 0
+FAILED = 1
+task_state = RUNNING
 def handle(line: str):
-    global current_task_set
+    global current_task_set, after_kernel_load, task_state
     print('> ' + line)
     line = line.lower()
     if "loader started" in line:
         send_kernel()
         ser.write(b'l')
-    if "hyperperiod passed" in line:
-        print("Task set passed! Noting.")
+        after_kernel_load = True
+        task_state = RUNNING
         print(f"Task set {total_task_sets - len(task_sets)}/{total_task_sets}")
-        success_task_sets.append(current_task_set)
+    if "hyperperiod passed" in line:
+        if not after_kernel_load:
+            print('\a', end='')
+        if (task_state == RUNNING):
+            success_task_sets.append(current_task_set)
+        elif (task_state == FAILED):
+            fail_task_sets.append(current_task_set)
+        print(f"Task set done! Success: {len(success_task_sets)} Fail: {len(fail_task_sets)}")
         current_task_set = task_sets.pop()
         set_task_set(current_task_set)
+        after_kernel_load = False
     if 'warning' in line or 'assert' in line or 'abort' in line or 'undefined' in line:
-        print('\a')
+        print('\a', end='')
+        task_state = FAILED
 
 while True:
     try:
@@ -70,7 +88,8 @@ while True:
         text = data.decode('utf-8').strip()
         handle(text)
     except UnicodeDecodeError:
-        print("Garbage (startup?)")
+        text = data.decode('utf-8', errors='ignore').strip()
+        print(f"Garbage (salvaged: \"{text}\")")
     except (KeyboardInterrupt, IndexError):
         now = datetime.datetime.now()
         dt  = now.strftime('%Y%m%d-%H%M%S')
