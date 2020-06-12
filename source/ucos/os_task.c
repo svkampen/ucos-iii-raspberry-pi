@@ -2080,7 +2080,7 @@ void  OS_TaskInitTCB (OS_TCB  *p_tcb)
 #else
     p_tcb->EDFPeriod = 0;
     p_tcb->EDFRelativeDeadline = 0;
-    p_tcb->EDFCurrentActivationTime = 0;
+    p_tcb->CurrentActivationTime = 0;
 #endif
 
 #if OS_CFG_DBG_EN > 0u

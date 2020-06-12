@@ -333,6 +333,7 @@ extern "C" {
 #define  OS_OPT_TASK_STK_CLR                 (OS_OPT)(0x0002u)  /* Clear the stack when the task is create            */
 #define  OS_OPT_TASK_SAVE_FP                 (OS_OPT)(0x0004u)  /* Save the contents of any floating-point registers  */
 #define  OS_OPT_TASK_NO_TLS                  (OS_OPT)(0x0008u)  /* Specifies the task DOES NOT require TLS support    */
+#define OS_OPT_TASK_IGNORE_GUARANTEE         (OS_OPT)(0x0010u) /* Ignore an EDF scheduling guarantee failure */
 
 /*
 ------------------------------------------------------------------------------------------------------------------------
@@ -973,12 +974,12 @@ struct os_tcb {
 #if !(EDF_CFG_ENABLED)
     OS_PRIO              Prio;                              /* Task priority (0 == highest)                           */
 #else
+    CPU_INT32S           EDFHeapIndex;                      /* Index of this TCB into the EDF heap. */
     CPU_TS64             EDFPeriod;                         /* Period */
     CPU_TS64             EDFRelativeDeadline;               /* Relative deadline (to start of period) */
-    CPU_TS64             EDFCurrentActivationTime;          /* TS when the task was last activated */
     CPU_TS64             EDFWorstCaseExecutionTime;         /* WCET */
-    CPU_INT32S           EDFHeapIndex;                      /* Index of this TCB into the EDF heap. */
 #endif
+    CPU_TS64             CurrentActivationTime;             /* TS when the task was last activated */
     CPU_STK_SIZE         StkSize;                           /* Size of task stack (in number of stack elements)       */
     OS_OPT               Opt;                               /* Task options as passed by OSTaskCreate()               */
 

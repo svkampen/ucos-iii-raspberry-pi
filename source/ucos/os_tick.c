@@ -33,6 +33,7 @@
 #define  MICRIUM_SOURCE
 #include <os.h>
 #include <printf.h>
+#include <edf_cfg.h>
 #include <edf_heap.h>
 #include <sched_edf.h>
 
@@ -61,6 +62,8 @@ const  CPU_CHAR  *os_tick__c = "$Id: $";
 ************************************************************************************************************************
 */
 
+extern void TickTaskFinishInstance(void);
+
 void  OS_TickTask (void  *p_arg)
 {
     OS_ERR  err;
@@ -68,14 +71,18 @@ void  OS_TickTask (void  *p_arg)
 
     p_arg = p_arg;                                          /* Prevent compiler warning                               */
 
+#if EDF_CFG_ENABLED
     OS_EDF_FINISH_INSTANCE_NO_BLOCK; // tick task doesn't run in the first tick
+#else
+    TickTaskFinishInstance();
+#endif
 
     (void)OSTaskSemPend((OS_TICK  )0,
                         (OS_OPT   )OS_OPT_PEND_BLOCKING,
                         (CPU_TS  *)&ts,
                         (OS_ERR  *)&err);               /* Wait for signal from tick interrupt                    */
 
-    OS_EDF_RESET_ACTIVATION_TIME;
+    OS_RESET_ACTIVATION_TIME;
 
     if (err == OS_ERR_NONE) {
         if (OSRunning == OS_STATE_OS_RUNNING) {
@@ -84,6 +91,8 @@ void  OS_TickTask (void  *p_arg)
     }
 #if EDF_CFG_ENABLED
     OS_EDF_FINISH_INSTANCE_NO_BLOCK;
+#else
+    TickTaskFinishInstance();
 #endif
 
     while (DEF_ON) {
@@ -98,6 +107,8 @@ void  OS_TickTask (void  *p_arg)
         }
 #if EDF_CFG_ENABLED
         OS_EDF_FINISH_INSTANCE_NO_BLOCK;
+#else
+        TickTaskFinishInstance();
 #endif
     }
 }

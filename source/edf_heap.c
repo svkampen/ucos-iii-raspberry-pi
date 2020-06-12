@@ -19,14 +19,14 @@ OS_TCB* OS_EdfHeapPeek(void)
 
 void print_task_name_deadline(int idx, OS_TCB* task)
 {
-    printf("%d %s P %llx RD %llx LAT %llx", idx, task->NamePtr, task->EDFPeriod, task->EDFRelativeDeadline, task->EDFCurrentActivationTime);
+    printf("%d %s P %llx RD %llx LAT %llx", idx, task->NamePtr, task->EDFPeriod, task->EDFRelativeDeadline, task->CurrentActivationTime);
 }
 
-void OS_EdfResetActivationTimes()
+void OS_ResetActivationTimes()
 {
     uint64_t tmr = CPU_TS_TmrRd();
     OS_EDF_HEAP_FOREACH({
-        task->EDFCurrentActivationTime = tmr;
+        task->CurrentActivationTime = tmr;
     });
 }
 

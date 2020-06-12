@@ -4,6 +4,8 @@
 #include <runtime_assert.h>
 
 extern void hang();
+extern void wait_for_cycles(int);
+extern void reboot_using_watchdog();
 
 #if EDF_CFG_ENABLED
 
@@ -38,8 +40,12 @@ void OSSched(void)
     uint64_t time = CPU_TS_TmrRd();
     if (absolute_deadline < time)
     {
-        printf("Warning: deadline for task `%s' missed: %llu < %llu\n",
+        printf("Warning: deadline for task `%s' missed: %llu < %llu, exiting...\n",
                OSTCBHighRdyPtr->NamePtr, absolute_deadline, time);
+        __asm__ __volatile__("cpsid if");
+        printf("Hyperperiod passed!\n");
+        wait_for_cycles(700000000);
+        reboot_using_watchdog();
     }
 #endif
 
@@ -256,10 +262,11 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
     p_tcb->EDFPeriod             = TICKS_TO_USEC(period);
     p_tcb->EDFRelativeDeadline   = relative_deadline;
     p_tcb->EDFWorstCaseExecutionTime = wcet;
-    p_tcb->EDFCurrentActivationTime = 0;
+    p_tcb->CurrentActivationTime = 0;
     p_tcb->EDFHeapIndex = -1;
 
     OS_CRITICAL_ENTER();
+    if (opt & OS_OPT_TASK_IGNORE_GUARANTEE) goto guarantee_end;
     OS_EdfHeapInsert(p_tcb, err);
     ASSERT(*err == OS_ERR_NONE);
     if (!edf_guarantee())
@@ -271,6 +278,8 @@ void OSTaskCreate(OS_TCB* p_tcb, CPU_CHAR* p_name, OS_TASK_PTR p_task,
     }
     OS_EdfHeapRemove(p_tcb);
     OS_CRITICAL_EXIT();
+
+guarantee_end:
 
 #if OS_CFG_TASK_REG_TBL_SIZE > 0u
     for (reg_nbr = 0u; reg_nbr < OS_CFG_TASK_REG_TBL_SIZE; reg_nbr++)
@@ -325,7 +334,7 @@ void OSFinishInstance()
     OS_CRITICAL_ENTER();
 
     CPU_TS64 time  = CPU_TS_TmrRd();
-    CPU_TS64 delta = time - p_tcb->EDFCurrentActivationTime;
+    CPU_TS64 delta = time - p_tcb->CurrentActivationTime;
 
     /* timer resolution = 1 μs, and 1 s = 1e6 μs */
     /* FIXME might be off by at most one tick? but should sync as tasks activate
@@ -343,7 +352,7 @@ void OSFinishInstance()
 
     OS_TaskBlock(p_tcb, ticks_left);
 
-    p_tcb->EDFCurrentActivationTime += p_tcb->EDFPeriod;
+    p_tcb->CurrentActivationTime += p_tcb->EDFPeriod;
 
     OS_CRITICAL_EXIT_NO_SCHED();
 

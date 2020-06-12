@@ -7,7 +7,7 @@
 #define EDF_CFG_DEBUG 0u
 
 #define EDF_DEADLINE_ABSOLUTE(tcb)                                             \
-    ((tcb)->EDFCurrentActivationTime + (tcb)->EDFRelativeDeadline)
+    ((tcb)->CurrentActivationTime + (tcb)->EDFRelativeDeadline)
 
 #define OS_EDF_HEAP_FOREACH(body)                                              \
     for (int32_t idx = 0; idx < OSEdfHeapSize; ++idx)                         \
