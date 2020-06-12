@@ -257,7 +257,7 @@ retry:
     ts_tmr_cnts <<= 32;
     ts_tmr_cnts |= lo;
 
-    return (ts_tmr_cnts);
+    return ts_tmr_cnts;
 }
 #endif
 
