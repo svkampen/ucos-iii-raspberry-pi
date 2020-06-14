@@ -50,6 +50,7 @@ const  CPU_CHAR  *os_cpu_c__c = "$Id: $";
 #include <printf.h>
 #include <edf_heap.h>
 #include <runtime_assert.h>
+#include <sched_edf.h>
 
 /*
 *********************************************************************************************************

@@ -183,7 +183,7 @@ void  OS_TickTaskInit (OS_ERR  *p_err)
                  (OS_ERR     *)p_err);
 #else
     OSTaskCreate(&OSTickTaskTCB, "uC/OS-III Tick Task", OS_TickTask, 0, OSCfg_TickTaskStkBasePtr, OSCfg_TickTaskStkLimit,
-                 OSCfg_TickTaskStkSize, 0, 1, 250, 50, 0, OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS, p_err);
+                 OSCfg_TickTaskStkSize, 0, 1, 100, 50, 0, OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_NO_TLS, p_err);
 #endif
 }
 

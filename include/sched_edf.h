@@ -17,3 +17,9 @@ double OSProcessorUtilization();
 #define SECS_TO_USECS(secs) (secs * 1000000)
 #define MSECS_TO_USECS(msecs) (msecs * 1000)
 
+#define DELTAS_SIZE 10000
+extern CPU_TS32 deltas[];
+extern CPU_TS64 start, end;
+extern bool delta_set_flag;
+extern CPU_INT32U delta_idx;
+extern void print_deltas_and_exit(void);

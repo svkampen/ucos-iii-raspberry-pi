@@ -8,7 +8,7 @@ struct task
     uint64_t edf_relative_deadline;
     uint64_t wcet;
     OS_TCB tcb __attribute__((aligned(8)));
-    CPU_STK stk[4096] __attribute__((aligned(8)));
+    CPU_STK stk[2048] __attribute__((aligned(8)));
 };
 
 struct task_set

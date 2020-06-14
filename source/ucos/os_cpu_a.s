@@ -144,7 +144,7 @@ OSCtxSw:
     ldr r1, [r0]
     str sp, [r1]
 
-    blx OSTaskSwHook
+    //blx OSTaskSwHook
 
     LDR     R0, =OSTCBCurPtr                                    // OSTCBCurPtr = OSTCBHighRdyPtr//
     LDR     R1, =OSTCBHighRdyPtr
@@ -178,7 +178,7 @@ OSCtxSw:
 //********************************************************************************************************
 
 OSIntCtxSw:
-    blx OSTaskSwHook
+    //blx OSTaskSwHook
 
     LDR     R0, =OSTCBCurPtr                                    // OSTCBCurPtr = OSTCBHighRdyPtr//
     LDR     R1, =OSTCBHighRdyPtr

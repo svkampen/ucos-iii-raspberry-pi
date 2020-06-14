@@ -9,6 +9,21 @@ extern void reboot_using_watchdog();
 
 #if EDF_CFG_ENABLED
 
+CPU_TS32 deltas[DELTAS_SIZE];
+CPU_TS64 start;
+CPU_INT32U delta_idx = 0;
+bool delta_set_flag = false;
+
+void print_deltas_and_exit()
+{
+    printf("Deltas: ");
+    for (int i = 0; i < DELTAS_SIZE; ++i)
+    {
+        printf("%ld ", deltas[i]);
+    }
+    hang();
+}
+
 void OSSched(void)
 {
     CPU_SR_ALLOC();
@@ -31,7 +46,7 @@ void OSSched(void)
         return;
     }
 
-#if EDF_CFG_DEBUG
+#if (EDF_CFG_DEBUG)
     printf("OSSched: switching to %s\n", OSTCBHighRdyPtr->NamePtr);
 #endif
 
@@ -40,16 +55,20 @@ void OSSched(void)
     uint64_t time = CPU_TS_TmrRd();
     if (absolute_deadline < time)
     {
-        printf("Warning: deadline for task `%s' missed: %llu < %llu, exiting...\n",
+        printf("Warning: deadline for task `%s' missed: %llu < %llu\n",
                OSTCBHighRdyPtr->NamePtr, absolute_deadline, time);
-        __asm__ __volatile__("cpsid if");
-        printf("Hyperperiod passed!\n");
-        wait_for_cycles(700000000);
-        reboot_using_watchdog();
     }
 #endif
 
     OSTaskCtxSwCtr++;
+
+    if (delta_set_flag)
+    {
+        deltas[delta_idx] = CPU_TS_TmrRd() - start;
+        delta_idx++;
+        delta_set_flag = false;
+        if (delta_idx == DELTAS_SIZE) print_deltas_and_exit();
+    }
 
     OS_TASK_SW();
     CPU_INT_EN();
@@ -334,6 +353,8 @@ void OSFinishInstance()
     OS_CRITICAL_ENTER();
 
     CPU_TS64 time  = CPU_TS_TmrRd();
+    start = time;
+    delta_set_flag = true;
     CPU_TS64 delta = time - p_tcb->CurrentActivationTime;
 
     /* timer resolution = 1 μs, and 1 s = 1e6 μs */
@@ -342,10 +363,7 @@ void OSFinishInstance()
     OS_TICK    elapsed_ticks = (delta * OSCfg_TickRate_Hz) / 1000000;
     CPU_INT32S ticks_left    = USECS_TO_TICKS(p_tcb->EDFPeriod) - elapsed_ticks;
 
-    if (ticks_left <= 0)
-    {
-        printf("`%s': %llu\n", p_tcb->NamePtr, delta);
-    }
+    //printf("Delta for `%s': %llu; tick task time: %ld\n", p_tcb->NamePtr, delta, OSTickTaskTimeMax);
     WARN_IF_NOT(ticks_left > 0);
 
     ticks_left = (ticks_left <= 0) ? 1 : ticks_left;
