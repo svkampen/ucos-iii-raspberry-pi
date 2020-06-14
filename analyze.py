@@ -107,8 +107,8 @@ def main(args):
         if args['--total']:
             plt.ylim(0)
     else:
-        p1 = plt.plot(success_xs, success_ys)
-        p2 = plt.plot(failure_xs, failure_ys)
+        p1 = plt.plot(success_xs, success_ys, color=succ_color)
+        p2 = plt.plot(failure_xs, failure_ys, color=fail_color)
     if not args['--total']:
         plt.legend((p1[0], p2[0]), ('Successful task sets', 'Failing task sets'))
     if (args['--bar']):

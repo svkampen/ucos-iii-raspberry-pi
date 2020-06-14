@@ -46,7 +46,7 @@ data_abort_str:
 .asciz "Data Abort\n"
 
 undefined_str:
-.asciz "Undefined: %08lx\n"
+.asciz "Undefined\n"
 
 hang_str:
 .asciz "Hang called\n"
@@ -70,12 +70,17 @@ r12 %08lx r13 (sp) %08lx r14 (prev pc) %08lx\n"
 .endm
 
 undefined:
+    sub lr,lr,#4
+    push {lr}
+    mov lr, r0
+    cps #0x13
+    mov r0,r13
+    cps #0x17
+    push {r0}
+    mov r0, lr
+    PRINT_REGS
     ldr r0,=undefined_str
-    mov r1, lr
-    sub r1,r1,#4
-    push {r1}
     bl printf_
-
     b hang_
 
 data:

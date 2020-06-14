@@ -1,7 +1,7 @@
 #pragma once
 
 /* Power-of-two minus one, please. */
-#define EDF_CFG_MAX_TASKS 255
+#define EDF_CFG_MAX_TASKS 511
 #define EDF_CFG_CHECK_DEADLINE_MISS 1u
 #define EDF_CFG_ENABLED 1u
 #define EDF_CFG_DEBUG 0u

@@ -7,11 +7,7 @@
 #include <uart.h>
 #include <tasks.h>
 
-uint32_t deltas[512];
-uint32_t measurement_deltas[512];
 extern void wait_for_cycles(uint32_t);
-extern void collect_deltas();
-extern void collect_delta(uint32_t, uint32_t);
 
 //static OS_TCB task;
 //static CPU_STK stack[4096] __attribute__((aligned(8)));
@@ -135,7 +131,13 @@ void main()
         "Task 7",
         "Task 8",
         "Task 9",
-        "Task 10"
+        "Task 10",
+        "Task 11",
+        "Task 12",
+        "Task 13",
+        "Task 14",
+        "Task 15",
+        "Task 16"
     };
 
     double processor_utilization = 0.0;
@@ -145,11 +147,11 @@ void main()
         struct task* t = &task_set.tasks[i];
         processor_utilization += (t->wcet / (double)t->edf_period);
 #if EDF_CFG_ENABLED > 0u
-        OSTaskCreate(&t->tcb, task_names[i], &WaitTask, t, t->stk, 1024, 4096, 0, t->edf_period,
-                TICKS_TO_USEC(t->edf_relative_deadline), TICKS_TO_USEC(t->wcet), 0, OS_OPT_TASK_IGNORE_GUARANTEE, &err);
+        OSTaskCreate(&t->tcb, task_names[i % 16], &WaitTask, t, t->stk, 1024, 2048, 0, t->edf_period,
+                TICKS_TO_USEC(t->edf_relative_deadline), TICKS_TO_USEC(t->wcet), 0, 0, &err);
 #else
-        OSTaskCreate(&t->tcb, task_names[i], &WaitTask, t, t->rm_priority, t->stk,
-                     1024, 4096, 0, 0, 0, 0, &err);
+        OSTaskCreate(&t->tcb, task_names[i % 16], &WaitTask, t, t->rm_priority, t->stk,
+                     1024, 2048, 0, 0, 0, 0, &err);
 #endif
         ASSERT(err == OS_ERR_NONE);
     }
